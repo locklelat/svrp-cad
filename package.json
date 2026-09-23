@@ -19,6 +19,10 @@
         "appId": "com.svrp.cad",
         "productName": "SVRP-CAD",
         "artifactName": "${productName}-Setup.${ext}",
+        "files": [
+            "**/*",
+            "config.js"
+        ],
         "directories": {
             "output": "dist"
         },
