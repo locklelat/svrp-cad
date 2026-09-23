@@ -1,0 +1,1242 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    user-select: none;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #0f172a;
+}
+
+/* ==========================================================================
+   1. Base MDT Container, Vehicle Mount & Status Outlines
+   ========================================================================== */
+#mdt-container {
+    display: flex !important;
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 0;
+    border: none;
+    flex-direction: column;
+    box-shadow: none;
+    z-index: 99999;
+    overflow: hidden;
+}
+#mdt-container.dash-mounted {
+    top: auto;
+    bottom: 35px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1350px;
+    max-width: 92vw;
+    height: 920px;
+    max-height: 92vh;
+    border: 16px solid #1a1e24;
+    border-bottom: 16px solid #1a1e24;
+    border-radius: 14px;
+    box-shadow: 
+        inset 0 0 25px rgba(0, 0, 0, 0.9),
+        0 20px 50px rgba(0, 0, 0, 0.9),
+        0 0 0 2px #374151;
+}
+
+#mdt-container.status-outline-detail {
+    border-color: #f97316 !important;
+    box-shadow: 
+        0 0 20px rgba(249, 115, 22, 0.45),
+        0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+}
+
+#mdt-container.dash-mounted.status-outline-detail {
+    border-color: #f97316 !important;
+    box-shadow: 
+        inset 0 0 25px rgba(0, 0, 0, 0.9),
+        0 0 30px rgba(249, 115, 22, 0.5),
+        0 20px 50px rgba(0, 0, 0, 0.9),
+        0 0 0 3px #ea580c !important;
+}
+
+#mdt-container.status-outline-oos {
+    border-color: #ef4444 !important;
+    box-shadow: 
+        0 0 20px rgba(239, 68, 68, 0.5),
+        0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+}
+
+#mdt-container.dash-mounted.status-outline-oos {
+    border-color: #ef4444 !important;
+    box-shadow: 
+        inset 0 0 25px rgba(0, 0, 0, 0.9),
+        0 0 30px rgba(239, 68, 68, 0.55),
+        0 20px 50px rgba(0, 0, 0, 0.9),
+        0 0 0 3px #dc2626 !important;
+}
+
+/* ==========================================================================
+   2. Header Navigation (Now configured as a draggable window handle)
+   ========================================================================== */
+.mdt-nav {
+    display: flex;
+    align-items: center;
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+    padding: 12px 18px;
+    gap: 12px;
+    flex-shrink: 0;
+    -webkit-app-region: drag; /* Turns top nav bar into a draggable window handle */
+}
+
+.nav-btn {
+    background: #334155;
+    color: #cbd5e1;
+    border: 1px solid #475569;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    -webkit-app-region: no-drag; /* Keeps navigation buttons clickable */
+}
+
+.nav-btn:hover {
+    background: #475569;
+    color: #ffffff;
+}
+
+.nav-btn.active {
+    background: #2563eb;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+.close-btn {
+    margin-left: auto;
+    background: #dc2626;
+    border-color: #ef4444;
+    color: #ffffff;
+    padding: 8px 14px;
+    -webkit-app-region: no-drag; /* Keeps close button clickable */
+}
+
+.close-btn:hover {
+    background: #b91c1c;
+}
+
+/* ==========================================================================
+   3. Body Scroll Area & Typography
+   ========================================================================== */
+.mdt-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    background: #0f172a;
+}
+
+.tab-content {
+    display: none;
+    height: 100%;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+h2 {
+    font-size: 1.4rem;
+    margin-bottom: 16px;
+    color: #f8fafc;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 8px;
+}
+
+h3 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    color: #94a3b8;
+}
+
+#officer-info {
+    margin-bottom: 16px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #38bdf8;
+}
+
+/* ==========================================================================
+   4. Search Bars
+   ========================================================================== */
+.search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.search-bar input {
+    flex: 1;
+    background: #1e293b;
+    border: 1px solid #475569;
+    color: #ffffff;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 1rem;
+    outline: none;
+}
+
+.search-bar input:focus {
+    border-color: #3b82f6;
+}
+
+.search-bar button {
+    background: #2563eb;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.search-bar button:hover {
+    background: #1d4ed8;
+}
+
+.dashboard-search-bar input {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+.dashboard-search-bar button {
+    background: #334155;
+    color: #cbd5e1;
+    border: 1px solid #475569;
+}
+
+.dashboard-search-bar button:hover {
+    background: #475569;
+    color: #fff;
+}
+
+/* ==========================================================================
+   5. Call Rows & Status Badges
+   ========================================================================== */
+.call-row, .call-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: background 0.15s ease;
+}
+
+.call-row:hover {
+    background: #334155;
+}
+
+.call-row.is-cleared {
+    opacity: 0.65;
+    border-left: 4px solid #64748b;
+}
+
+.call-row.is-active {
+    border-left: 4px solid #ef4444;
+}
+
+.call-card {
+    display: block;
+    line-height: 1.6;
+}
+
+.call-code {
+    background: #ef4444;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.call-code.cleared {
+    background: #475569;
+}
+
+.call-title {
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+.call-status-tag {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.call-status-tag.active {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border: 1px solid #ef4444;
+}
+
+.call-status-tag.cleared {
+    background: rgba(100, 116, 139, 0.2);
+    color: #cbd5e1;
+    border: 1px solid #64748b;
+}
+
+.call-location {
+    color: #94a3b8;
+    margin-left: auto;
+}
+
+/* ==========================================================================
+   6. Split Layout: Active Call Overview & Side Notes
+   ========================================================================== */
+.active-call-split-container {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 20px;
+}
+
+.call-left-panel, .call-right-panel {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+}
+
+.call-meta-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.call-assigned-units {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #334155;
+}
+
+.assigned-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.unit-chip {
+    background: #0f172a;
+    border: 1px solid #3b82f6;
+    color: #93c5fd;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.unit-chip:hover {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #60a5fa;
+}
+
+/* Side Notes Panel */
+.notes-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+.notes-panel-header h3 {
+    margin-bottom: 0;
+}
+
+.call-notes-feed {
+    flex: 1;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 12px;
+    overflow-y: auto;
+    max-height: 480px;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.note-item {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 0.88rem;
+    line-height: 1.4;
+}
+
+.note-item.status-log {
+    border-left: 3px solid #38bdf8;
+    background: #132238;
+}
+
+.note-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-bottom: 4px;
+}
+
+.note-meta .note-author {
+    font-weight: 700;
+    color: #38bdf8;
+}
+
+.note-text {
+    color: #f1f5f9;
+}
+
+.add-note-box {
+    display: flex;
+    gap: 8px;
+}
+
+.add-note-box input {
+    flex: 1;
+    background: #0f172a;
+    border: 1px solid #475569;
+    color: #ffffff;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.add-note-box input:focus {
+    border-color: #3b82f6;
+}
+
+.add-note-box button {
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.15s ease;
+}
+
+.add-note-box button:hover {
+    background: #1d4ed8;
+}
+
+.add-note-box button:disabled, 
+.add-note-box input:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.note-locked-hint {
+    color: #eab308;
+    font-size: 0.75rem;
+    margin-top: 6px;
+    font-style: italic;
+}
+
+/* ==========================================================================
+   7. Create Call Form
+   ========================================================================== */
+.form-container {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input, 
+.form-group textarea {
+    background: #0f172a;
+    border: 1px solid #475569;
+    color: #ffffff;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.form-group input:focus, 
+.form-group textarea:focus {
+    border-color: #3b82f6;
+}
+
+.form-group textarea {
+    resize: vertical;
+}
+
+.input-with-button {
+    display: flex;
+    gap: 8px;
+}
+
+.input-with-button input {
+    flex: 1;
+}
+
+.form-util-btn {
+    background: #334155;
+    border: 1px solid #475569;
+    color: #cbd5e1;
+    padding: 0 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.form-util-btn:hover {
+    background: #475569;
+    color: #ffffff;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.submit-call-btn {
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.submit-call-btn:hover {
+    background: #1d4ed8;
+}
+
+.reset-call-btn {
+    background: #334155;
+    color: #cbd5e1;
+    border: 1px solid #475569;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.reset-call-btn:hover {
+    background: #475569;
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   8. Citizen & Vehicle Lookup Details
+   ========================================================================== */
+.person-result-row, .vehicle-result-row {
+    background: #1e293b;
+    border: 1px solid #334155;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.15s ease;
+}
+
+.person-result-row:hover, .vehicle-result-row:hover {
+    background: #334155;
+    border-color: #3b82f6;
+    transform: translateX(4px);
+}
+
+.person-result-dob, .vehicle-result-sub {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: normal;
+}
+
+.back-btn {
+    background: #334155;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-bottom: 16px;
+}
+
+.back-btn:hover {
+    background: #475569;
+    color: #fff;
+}
+
+.profile-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.profile-header {
+    border-bottom: 1px solid #334155;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profile-header h3 {
+    font-size: 1.3rem;
+    color: #f8fafc;
+    margin-bottom: 4px;
+}
+
+.source-badge {
+    background: #334155;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.source-badge.ers {
+    background: rgba(14, 165, 233, 0.2);
+    color: #38bdf8;
+    border: 1px solid #0284c7;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 24px;
+}
+
+.profile-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-field.full-width {
+    grid-column: span 2;
+}
+
+.profile-field span.label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 2px;
+}
+
+.profile-field span.value {
+    font-size: 1rem;
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+.value-highlight-red {
+    color: #f87171 !important;
+    font-weight: bold !important;
+}
+
+.value-highlight-green {
+    color: #4ade80 !important;
+}
+
+/* ==========================================================================
+   9. Active Units Tab & Dynamic Status Styling
+   ========================================================================== */
+.units-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #334155;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+}
+
+.units-header h2 {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.refresh-btn {
+    background: #334155;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.refresh-btn:hover {
+    background: #475569;
+    color: #ffffff;
+}
+
+.unit-row {
+    background: #1e293b;
+    border: 1px solid #334155;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.15s ease;
+}
+
+.unit-row.is-tracked {
+    border-color: #3b82f6;
+    box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.25);
+}
+
+.unit-row.is-self {
+    border-left: 4px solid #38bdf8;
+}
+
+.unit-callsign {
+    background: #2563eb;
+    color: #ffffff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.unit-name {
+    font-weight: 600;
+    color: #f1f5f9;
+    font-size: 1.05rem;
+}
+
+.unit-rank {
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+.unit-status {
+    margin-left: auto;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.15s ease;
+}
+
+.unit-status.status-available {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid #22c55e;
+}
+
+.unit-status.status-detail {
+    background: rgba(234, 179, 8, 0.15);
+    color: #facc15;
+    border: 1px solid #eab308;
+}
+
+.unit-status.status-oos {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid #ef4444;
+}
+
+.unit-status.status-en-route {
+    background: rgba(2, 132, 199, 0.2);
+    color: #38bdf8;
+    border: 1px solid #0284c7;
+}
+
+.unit-status.status-on-scene {
+    background: rgba(22, 163, 74, 0.2);
+    color: #86efac;
+    border: 1px solid #16a34a;
+}
+
+/* ==========================================================================
+   10. Bottom Action Footer Bar
+   ========================================================================== */
+.mdt-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #090e17;
+    border-top: 1px solid #334155;
+    padding: 10px 20px;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.footer-call-status {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 40%;
+}
+
+.footer-call-status.active {
+    color: #38bdf8;
+}
+
+.footer-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.15s ease;
+}
+
+.action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-enroute {
+    background: #0284c7;
+    color: #ffffff;
+}
+.btn-enroute:hover:not(:disabled) {
+    background: #0369a1;
+}
+
+.btn-scene {
+    background: #16a34a;
+    color: #ffffff;
+}
+.btn-scene:hover:not(:disabled) {
+    background: #15803d;
+}
+
+.btn-attach {
+    background: #475569;
+    color: #ffffff;
+}
+.btn-attach:hover:not(:disabled) {
+    background: #334155;
+}
+
+.btn-clear {
+    background: #dc2626;
+    color: #ffffff;
+}
+.btn-clear:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+/* ==========================================================================
+   11. Attach Unit Modal Overlay
+   ========================================================================== */
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+}
+
+.modal-content {
+    background: #1e293b;
+    border: 1px solid #475569;
+    width: 480px;
+    max-width: 90%;
+    border-radius: 8px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    background: #0f172a;
+    border-bottom: 1px solid #334155;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #f8fafc;
+}
+
+.close-modal-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+.close-modal-btn:hover {
+    color: #ffffff;
+}
+
+.modal-body {
+    max-height: 350px;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.attach-unit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.attach-btn {
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.attach-btn:hover {
+    background: #1d4ed8;
+}
+
+/* ==========================================================================
+   12. Context Menus
+   ========================================================================== */
+.context-menu {
+    position: fixed;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    padding: 6px 0;
+    z-index: 1000000;
+    min-width: 180px;
+}
+
+.context-header {
+    padding: 6px 16px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #334155;
+    margin-bottom: 4px;
+}
+
+.context-item {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    color: #e2e8f0;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s ease;
+}
+
+.context-item:hover {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.context-item.danger:hover {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.no-calls, .no-results, .loading {
+    color: #64748b;
+    font-style: italic;
+    padding: 12px 0;
+}
+
+/* Interactive Cross-Reference Links */
+.clickable-owner-link {
+    color: #38bdf8 !important;
+    text-decoration: underline;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.clickable-owner-link:hover {
+    color: #60a5fa !important;
+    transform: translateX(2px);
+}
+
+/* Dashboard Main Grid Layout */
+.dashboard-main-container {
+    display: flex;
+    gap: 20px;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+}
+
+.dashboard-content-left {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Active Units Side Box */
+.dashboard-active-units-box {
+    width: 280px;
+    background: rgba(18, 22, 31, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 120px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.units-box-header {
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.units-box-header h3 {
+    margin: 0;
+    font-size: 14px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#unit-count-badge {
+    background: #2563eb;
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.units-box-list {
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Individual Unit Item Card */
+.unit-item-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 10px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.unit-info .unit-callsign {
+    font-weight: bold;
+    color: #fff;
+    font-size: 13px;
+}
+
+.unit-info .unit-name {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+/* Status Badges */
+.unit-status-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.status-available { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+.status-enroute { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+.status-onscene { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+.status-busy { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 400px;
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid #333;
+    border-radius: 6px;
+    overflow: hidden;
+    color: #fff;
+}
+
+.chat-messages-box {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.chat-message-item {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.chat-message-item.private-msg {
+    background: rgba(200, 150, 0, 0.15);
+    border-left: 3px solid #ffc107;
+}
+
+.chat-time {
+    color: #888;
+    margin-right: 6px;
+}
+
+.chat-sender {
+    color: #4da6ff;
+    font-weight: bold;
+}
+
+.chat-target {
+    color: #ffc107;
+    font-size: 11px;
+}
+
+.chat-input-area {
+    display: flex;
+    padding: 10px;
+    background: #111;
+    gap: 8px;
+    border-top: 1px solid #333;
+}
+
+.chat-input-area input, .chat-input-area select {
+    background: #222;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+.chat-input-area input {
+    flex: 1;
+}
+
+.chat-input-area button {
+    background: #007bff;
+    color: #white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.chat-input-area button:hover {
+    background: #0056b3;
+}

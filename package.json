@@ -1,0 +1,32 @@
+{
+    "name": "svrp-cad",
+    "version": "1.0.0",
+    "description": "CAD Client for SVRP",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "build-win": "electron-builder --win --x64"
+    },
+    "dependencies": {
+        "electron-updater": "^6.8.9"
+    },
+    "devDependencies": {
+        "electron": "^28.0.0",
+        "electron-builder": "^24.13.3"
+    },
+    "build": {
+        "appId": "com.svrp.cad",
+        "productName": "SVRP CAD",
+        "directories": {
+            "output": "dist"
+        },
+        "win": {
+            "target": "nsis"
+        },
+        "publish": {
+            "provider": "github",
+        "owner": "locklelat",
+        "repo": "svrp-cad"
+        }
+    }
+}
