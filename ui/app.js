@@ -1,6 +1,8 @@
 // Updated Frontend Bridge for your Standalone Desktop App
 async function fetchNui(endpoint, data = {}) {
     try {
+        const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
+
         // Mock fallback for FiveM native functions not present on the VPS desktop app
         if (endpoint === 'getCurrentLocation') {
             return {
@@ -12,56 +14,56 @@ async function fetchNui(endpoint, data = {}) {
             window.close();
             return {};
         }
-        let url = `${window.api.VPS_API_URL}/api/${endpoint}`;
+        let url = `${baseUrl}/api/${endpoint}`;
         let method = 'POST';
 
         if (endpoint === 'searchCitizen') {
-            url = `${window.api.VPS_API_URL}/api/search/citizen?query=${encodeURIComponent(data.query || data.name || '')}`;
+            url = `${baseUrl}/api/search/citizen?query=${encodeURIComponent(data.query || data.name || '')}`;
             method = 'GET';
         } else if (endpoint === 'searchPlate') {
-            url = `${window.api.VPS_API_URL}/api/search/plate/${encodeURIComponent(data.query || data.plate || '')}`;
+            url = `${baseUrl}/api/search/plate/${encodeURIComponent(data.query || data.plate || '')}`;
             method = 'GET';
         } else if (endpoint === 'getReports') {
-            url = `${window.api.VPS_API_URL}/api/reports`;
+            url = `${baseUrl}/api/reports`;
             method = 'GET';
         } else if (endpoint === 'getActiveUnits') {
-            url = `${window.api.VPS_API_URL}/api/units`;
+            url = `${baseUrl}/api/units`;
             method = 'GET';
         } else if (endpoint === 'getChatHistory') {
-            url = `${window.api.VPS_API_URL}/api/chat`;
+            url = `${baseUrl}/api/chat`;
             method = 'GET';
         } else if (endpoint === 'sendCadMessage') {
-            url = `${window.api.VPS_API_URL}/api/chat`;
+            url = `${baseUrl}/api/chat`;
             method = 'POST';
         } else if (endpoint === 'getCallDetails') {
-            url = `${window.api.VPS_API_URL}/api/calls/${data.callId}`;
+            url = `${baseUrl}/api/calls/${data.callId}`;
             method = 'GET';
         } else if (endpoint === 'createCustomCall') {
-            url = `${window.api.VPS_API_URL}/api/calls`;
+            url = `${baseUrl}/api/calls`;
             method = 'POST';
         } else if (endpoint === 'attachUnitToCall') {
-            url = `${window.api.VPS_API_URL}/api/calls/${data.callId}/attach`;
+            url = `${baseUrl}/api/calls/${data.callId}/attach`;
             method = 'POST';
         } else if (endpoint === 'detachUnitFromCall') {
-            url = `${window.api.VPS_API_URL}/api/calls/${data.callId}/detach`;
+            url = `${baseUrl}/api/calls/${data.callId}/detach`;
             method = 'POST';
         } else if (endpoint === 'clearCall') {
-            url = `${window.api.VPS_API_URL}/api/calls/${data.callId}/clear`;
+            url = `${baseUrl}/api/calls/${data.callId}/clear`;
             method = 'POST';
         } else if (endpoint === 'updateCallStatus') {
-            url = `${window.api.VPS_API_URL}/api/calls/${data.callId}/status`;
+            url = `${baseUrl}/api/calls/${data.callId}/status`;
             method = 'POST';
         } else if (endpoint === 'addCallNote') {
-            url = `${window.api.VPS_API_URL}/api/calls/${data.callId}/notes`;
+            url = `${baseUrl}/api/calls/${data.callId}/notes`;
             method = 'POST';
         } else if (endpoint === 'updateOfficerStatus') {
-            url = `${window.api.VPS_API_URL}/api/officer/status`;
+            url = `${baseUrl}/api/officer/status`;
             method = 'POST';
         } else if (endpoint === 'sv_cad:server:submitTicket') {
-            url = `${window.api.VPS_API_URL}/api/tickets`;
+            url = `${baseUrl}/api/tickets`;
             method = 'POST';
         } else if (endpoint === 'sv_cad:server:submitReport') {
-            url = `${window.api.VPS_API_URL}/api/reports`;
+            url = `${baseUrl}/api/reports`;
             method = 'POST';
         }
 
@@ -202,10 +204,11 @@ function showTab(tabId) {
 window.showTab = showTab;
 
 async function closeMDT() {
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
     // Notify the VPS backend and wait for session clearance first
     if (localOfficer && localOfficer.callsign) {
         try {
-            await fetch('${window.api.VPS_API_URL}/api/officer/logout', {
+            await fetch(`${baseUrl}/api/officer/logout`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ callsign: localOfficer.callsign })
@@ -237,10 +240,11 @@ async function closeMDT() {
 window.closeMDT = closeMDT;
 
 window.addEventListener('beforeunload', (e) => {
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
     if (localOfficer && localOfficer.callsign) {
         // Synchronous fallback request to guarantee logout state on exit
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', '${window.api.VPS_API_URL}/api/officer/logout', false);
+        xhr.open('POST', `${baseUrl}/api/officer/logout`, false);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.send(JSON.stringify({ callsign: localOfficer.callsign }));
     }
@@ -393,15 +397,12 @@ function showDashboardUnitContextMenu(x, y, unit) {
     if (!menu) return;
     contextTargetUnit = unit;
 
-    // Check if the current logged-in user is Dispatch
     const isDispatch = localOfficer && String(localOfficer.callsign).trim().toUpperCase() === 'DISPATCH';
 
     if (!isDispatch) {
-        // Hide GPS tracking entirely for regular units
         if (trackBtn) trackBtn.style.display = 'none';
         if (cancelBtn) cancelBtn.style.display = 'none';
     } else {
-        // Dispatch retains full GPS tracking capabilities
         if (activeTrackedServerId === unit.id) {
             if (trackBtn) trackBtn.style.display = 'none';
             if (cancelBtn) cancelBtn.style.display = 'block';
@@ -424,15 +425,12 @@ function showUnitContextMenu(x, y, unit) {
     if (!menu) return;
     contextTargetUnit = unit;
 
-    // Check if the current logged-in user is Dispatch
     const isDispatch = localOfficer && String(localOfficer.callsign).trim().toUpperCase() === 'DISPATCH';
 
     if (!isDispatch) {
-        // Hide GPS tracking entirely for regular units
         if (trackBtn) trackBtn.style.display = 'none';
-        if (cancelBtn) trackBtn.style.display = 'none';
+        if (cancelBtn) cancelBtn.style.display = 'none';
     } else {
-        // Dispatch retains full GPS tracking capabilities
         if (activeTrackedServerId === unit.id) {
             if (trackBtn) trackBtn.style.display = 'none';
             if (cancelBtn) cancelBtn.style.display = 'block';
@@ -1228,7 +1226,6 @@ function renderDashboardActiveUnits(units) {
         const unitElement = document.createElement('div');
         unitElement.className = 'unit-item-card';
 
-        // Ensure callsign comparison is used so desktop database logins are recognized as "YOU"
         const isSelf = (String(unit.callsign).trim().toUpperCase() === String(localOfficer.callsign).trim().toUpperCase());
 
         if (isSelf) {
@@ -1389,15 +1386,15 @@ function hideSelfStatusContextMenu() {
 }
 
 async function changeOfficerStatus(newStatus) {
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
     hideSelfStatusContextMenu();
     localOfficer.status = newStatus;
     updateScreenStatusOutline();
     updateFooterBar();
 
-    // 1. Send status update to VPS backend database session table
     if (localOfficer && localOfficer.callsign) {
         try {
-            await fetch('${window.api.VPS_API_URL}/api/officer/status', {
+            await fetch(`${baseUrl}/api/officer/status`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1412,10 +1409,7 @@ async function changeOfficerStatus(newStatus) {
         }
     }
 
-    // 2. Keep the original NUI fallback trigger for in-game connections
     await fetchNui('updateOfficerStatus', { status: newStatus });
-
-    // 3. Refresh active units view immediately
     fetchActiveUnits();
 }
 window.changeOfficerStatus = changeOfficerStatus;
@@ -1630,7 +1624,7 @@ window.addEventListener('message', (event) => {
             updateFooterBar();
         }
         renderDashboardCalls();
-        checkAndAutoSwitchTab(); // Automatically routes regular units
+        checkAndAutoSwitchTab();
         return;
     }
 
@@ -1649,7 +1643,7 @@ window.addEventListener('message', (event) => {
         }
 
         renderDashboardCalls();
-        checkAndAutoSwitchTab(); // Automatically snaps regular units back to dashboard
+        checkAndAutoSwitchTab();
         return;
     }
 
@@ -1762,13 +1756,14 @@ window.addEventListener('keydown', (event) => {
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
     // 1. Load available units for login screen dropdown
     const selectEl = document.getElementById('login-operator-select');
     const hintEl = document.getElementById('login-password-hint');
 
     if (selectEl) {
         try {
-            const res = await fetch('${window.api.VPS_API_URL}/api/all-operators');
+            const res = await fetch(`${baseUrl}/api/all-operators`);
             const operators = await res.json();
             
             selectEl.innerHTML = '';
@@ -1812,7 +1807,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Fetch initial dashboard data
     try {
-        const response = await fetch('${window.api.VPS_API_URL}/api/dashboard');
+        const response = await fetch(`${baseUrl}/api/dashboard`);
         const dashboardData = await response.json();
         
         if (dashboardData && dashboardData.success) {
@@ -2251,6 +2246,7 @@ function prefillReport(type, value) {
 window.prefillReport = prefillReport;
 
 async function submitOperatorLogin() {
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
     const selectEl = document.getElementById('login-operator-select');
     const passwordInput = document.getElementById('login-password-input');
     if (passwordInput) {
@@ -2274,7 +2270,7 @@ async function submitOperatorLogin() {
     }
 
     try {
-        const response = await fetch('${window.api.VPS_API_URL}/api/officer/login', {
+        const response = await fetch(`${baseUrl}/api/officer/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2292,7 +2288,6 @@ async function submitOperatorLogin() {
             return;
         }
 
-        // Bind identity explicitly to local desktop session
         localOfficer = {
             callsign: String(selectedOp.callsign),
             name: selectedOp.name,
@@ -2311,7 +2306,6 @@ async function submitOperatorLogin() {
             loginModal.style.display = 'none';
         }
 
-        // Restrict nav buttons visibility for regular units vs dispatch
         const isDispatch = String(localOfficer.callsign).trim().toUpperCase() === 'DISPATCH';
         document.querySelectorAll('.dispatcher-only').forEach(btn => {
             btn.style.display = isDispatch ? 'inline-block' : 'none';

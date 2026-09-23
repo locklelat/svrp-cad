@@ -1,28 +1,11 @@
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const path = require('path');
 const { autoUpdater } = require('electron-updater');
+const log = require('electron-log');
 
 // Logging for debugging updates
-autoUpdater.logger = require('electron-log');
+autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
-
-app.whenReady().then(() => {
-    createWindow();
-
-    if (app.isPackaged) {
-        autoUpdater.checkForUpdatesAndNotify();
-    }
-});
-
-autoUpdater.on('update-downloaded', () => {
-    dialog.showMessageBox({
-        type: 'info',
-        title: 'Update Available',
-        message: 'A new version of the SVRP CAD has been downloaded. The application will restart to apply the update.',
-        buttons: ['Update Now']
-    }).then(() => {
-        autoUpdater.quitAndInstall();
-    });
-});
 
 function createWindow() {
     const mainWindow = new BrowserWindow({
@@ -46,8 +29,24 @@ function createWindow() {
 
 app.whenReady().then(() => {
     createWindow();
+
+    if (app.isPackaged) {
+        autoUpdater.checkForUpdatesAndNotify();
+    }
+
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+});
+
+autoUpdater.on('update-downloaded', () => {
+    dialog.showMessageBox({
+        type: 'info',
+        title: 'Update Available',
+        message: 'A new version of the SVRP CAD has been downloaded. The application will restart to apply the update.',
+        buttons: ['Update Now']
+    }).then(() => {
+        autoUpdater.quitAndInstall();
     });
 });
 
