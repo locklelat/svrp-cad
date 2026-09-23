@@ -27,8 +27,9 @@
             "output": "dist"
         },
         "win": {
-            "target": "nsis"
-        },
+          "target": "nsis",
+          "icon": "icon.ico"
+        }
         "publish": {
             "provider": "github",
             "owner": "locklelat",
