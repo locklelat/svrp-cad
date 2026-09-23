@@ -838,32 +838,42 @@ h3 {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #090e17;
-    border-top: 1px solid #334155;
+    background: #06090f;
+    border-top: 1px solid #1e293b;
     padding: 10px 20px;
     gap: 16px;
     flex-shrink: 0;
 }
 
 .footer-call-status {
+    flex: 1;
     font-size: 0.9rem;
     font-weight: 700;
     color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 40%;
+}
+
+.footer-center-branding {
+    flex: 1;
+    text-align: center;
+    font-size: 1.15rem; /* Increased size to fill the vertical space */
+    font-weight: 800;   /* Extra bold for high visibility */
+    color: #94a3b8;     /* Slightly brighter contrast */
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.footer-actions {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
 }
 
 .footer-call-status.active {
     color: #38bdf8;
-}
-
-.footer-actions {
-    display: flex;
-    gap: 10px;
 }
 
 .action-btn {
