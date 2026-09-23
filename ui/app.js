@@ -12,56 +12,56 @@ async function fetchNui(endpoint, data = {}) {
             window.close();
             return {};
         }
-        let url = `http://82.197.65.71:3001/api/${endpoint}`;
+        let url = `${window.api.VPS_API_URL}/api/${endpoint}`;
         let method = 'POST';
 
         if (endpoint === 'searchCitizen') {
-            url = `http://82.197.65.71:3001/api/search/citizen?query=${encodeURIComponent(data.query || data.name || '')}`;
+            url = `${window.api.VPS_API_URL}/api/search/citizen?query=${encodeURIComponent(data.query || data.name || '')}`;
             method = 'GET';
         } else if (endpoint === 'searchPlate') {
-            url = `http://82.197.65.71:3001/api/search/plate/${encodeURIComponent(data.query || data.plate || '')}`;
+            url = `${window.api.VPS_API_URL}/api/search/plate/${encodeURIComponent(data.query || data.plate || '')}`;
             method = 'GET';
         } else if (endpoint === 'getReports') {
-            url = `http://82.197.65.71:3001/api/reports`;
+            url = `${window.api.VPS_API_URL}/api/reports`;
             method = 'GET';
         } else if (endpoint === 'getActiveUnits') {
-            url = `http://82.197.65.71:3001/api/units`;
+            url = `${window.api.VPS_API_URL}/api/units`;
             method = 'GET';
         } else if (endpoint === 'getChatHistory') {
-            url = `http://82.197.65.71:3001/api/chat`;
+            url = `${window.api.VPS_API_URL}/api/chat`;
             method = 'GET';
         } else if (endpoint === 'sendCadMessage') {
-            url = `http://82.197.65.71:3001/api/chat`;
+            url = `${window.api.VPS_API_URL}/api/chat`;
             method = 'POST';
         } else if (endpoint === 'getCallDetails') {
-            url = `http://82.197.65.71:3001/api/calls/${data.callId}`;
+            url = `${window.api.VPS_API_URL}/api/calls/${data.callId}`;
             method = 'GET';
         } else if (endpoint === 'createCustomCall') {
-            url = `http://82.197.65.71:3001/api/calls`;
+            url = `${window.api.VPS_API_URL}/api/calls`;
             method = 'POST';
         } else if (endpoint === 'attachUnitToCall') {
-            url = `http://82.197.65.71:3001/api/calls/${data.callId}/attach`;
+            url = `${window.api.VPS_API_URL}/api/calls/${data.callId}/attach`;
             method = 'POST';
         } else if (endpoint === 'detachUnitFromCall') {
-            url = `http://82.197.65.71:3001/api/calls/${data.callId}/detach`;
+            url = `${window.api.VPS_API_URL}/api/calls/${data.callId}/detach`;
             method = 'POST';
         } else if (endpoint === 'clearCall') {
-            url = `http://82.197.65.71:3001/api/calls/${data.callId}/clear`;
+            url = `${window.api.VPS_API_URL}/api/calls/${data.callId}/clear`;
             method = 'POST';
         } else if (endpoint === 'updateCallStatus') {
-            url = `http://82.197.65.71:3001/api/calls/${data.callId}/status`;
+            url = `${window.api.VPS_API_URL}/api/calls/${data.callId}/status`;
             method = 'POST';
         } else if (endpoint === 'addCallNote') {
-            url = `http://82.197.65.71:3001/api/calls/${data.callId}/notes`;
+            url = `${window.api.VPS_API_URL}/api/calls/${data.callId}/notes`;
             method = 'POST';
         } else if (endpoint === 'updateOfficerStatus') {
-            url = `http://82.197.65.71:3001/api/officer/status`;
+            url = `${window.api.VPS_API_URL}/api/officer/status`;
             method = 'POST';
         } else if (endpoint === 'sv_cad:server:submitTicket') {
-            url = `http://82.197.65.71:3001/api/tickets`;
+            url = `${window.api.VPS_API_URL}/api/tickets`;
             method = 'POST';
         } else if (endpoint === 'sv_cad:server:submitReport') {
-            url = `http://82.197.65.71:3001/api/reports`;
+            url = `${window.api.VPS_API_URL}/api/reports`;
             method = 'POST';
         }
 
@@ -205,7 +205,7 @@ async function closeMDT() {
     // Notify the VPS backend and wait for session clearance first
     if (localOfficer && localOfficer.callsign) {
         try {
-            await fetch('http://82.197.65.71:3001/api/officer/logout', {
+            await fetch('${window.api.VPS_API_URL}/api/officer/logout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ callsign: localOfficer.callsign })
@@ -240,7 +240,7 @@ window.addEventListener('beforeunload', (e) => {
     if (localOfficer && localOfficer.callsign) {
         // Synchronous fallback request to guarantee logout state on exit
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'http://82.197.65.71:3001/api/officer/logout', false);
+        xhr.open('POST', '${window.api.VPS_API_URL}/api/officer/logout', false);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.send(JSON.stringify({ callsign: localOfficer.callsign }));
     }
@@ -1397,7 +1397,7 @@ async function changeOfficerStatus(newStatus) {
     // 1. Send status update to VPS backend database session table
     if (localOfficer && localOfficer.callsign) {
         try {
-            await fetch('http://82.197.65.71:3001/api/officer/status', {
+            await fetch('${window.api.VPS_API_URL}/api/officer/status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1768,7 +1768,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (selectEl) {
         try {
-            const res = await fetch('http://82.197.65.71:3001/api/all-operators');
+            const res = await fetch('${window.api.VPS_API_URL}/api/all-operators');
             const operators = await res.json();
             
             selectEl.innerHTML = '';
@@ -1812,7 +1812,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Fetch initial dashboard data
     try {
-        const response = await fetch('http://82.197.65.71:3001/api/dashboard');
+        const response = await fetch('${window.api.VPS_API_URL}/api/dashboard');
         const dashboardData = await response.json();
         
         if (dashboardData && dashboardData.success) {
@@ -2274,7 +2274,7 @@ async function submitOperatorLogin() {
     }
 
     try {
-        const response = await fetch('http://82.197.65.71:3001/api/officer/login', {
+        const response = await fetch('${window.api.VPS_API_URL}/api/officer/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
