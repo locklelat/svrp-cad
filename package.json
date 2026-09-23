@@ -29,7 +29,7 @@
         "win": {
           "target": "nsis",
           "icon": "icon.ico"
-        }
+        },
         "publish": {
             "provider": "github",
             "owner": "locklelat",
