@@ -17,7 +17,7 @@
     },
     "build": {
         "appId": "com.svrp.cad",
-        "productName": "SweetVictory CAD",
+        "productName": "SweetVictoryCAD",
         "artifactName": "${productName}-Setup.${ext}",
         "files": [
             "**/*",
