@@ -7,8 +7,6 @@ const log = require('electron-log');
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
 
-const { app, ipcMain } = require('electron');
-
 ipcMain.handle('get-app-version', () => {
   return app.getVersion();
 });
