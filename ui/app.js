@@ -1506,232 +1506,12 @@ window.addEventListener('click', () => {
     hideAllContextMenus();
 });
 
+// LISTEN FOR IN-GAME CAD OPEN / CLOSE MESSAGES
 window.addEventListener('message', (event) => {
     const data = event.data;
-    const container = document.getElementById('mdt-container');
-
-    if (data.action === 'receiveCadMessage') {
-        appendMessageToChat(data.data);
-        return;
-    }
-
-    if (data.action === 'autoRunPlate' && data.plate) {
-        pendingAutoRunPlate = data.plate;
-        if (container && container.style.display === 'flex') {
-            showTab('vehicles');
-            executePlateLookup(data.plate);
-            pendingAutoRunPlate = null;
-        }
-        return;
-    }
-
-    if (data.action === 'newCall' && data.call) {
-        cachedCalls.unshift(data.call);
-        renderDashboardCalls();
-        return;
-    }
-
-    if (data.action === 'syncCallStatus' && data.callId) {
-        const found = cachedCalls.find(c => c.id === data.callId);
-        if (found) {
-            found.status = data.status;
-            if (data.notes) found.notes = data.notes;
-        }
-
-        if (currentActiveCall && currentActiveCall.id === data.callId) {
-            currentActiveCall.status = data.status;
-            if (data.notes) currentActiveCall.notes = data.notes;
-            updateFooterBar();
-            
-            const detailsContainer = document.getElementById('call-details');
-            if (detailsContainer) {
-                renderCallDetails(currentActiveCall);
-            }
-        }
-        renderDashboardCalls();
-        return;
-    }
-
-    if (data.action === 'syncOfficerStatus') {
-        const targetId = data.serverId;
-        const targetCallsign = data.callsign;
-        const targetStatus = data.status;
-
-        if (!Array.isArray(cachedUnits)) {
-            cachedUnits = [];
-        }
-
-        let unit = cachedUnits.find(u => 
-            (targetId && u.id === targetId) || 
-            (targetCallsign && u.callsign === targetCallsign)
-        );
-
-        const isSelf = data.isSelf === true || 
-                       (targetId && localOfficer && localOfficer.serverId === targetId) || 
-                       (targetCallsign && localOfficer && localOfficer.callsign === targetCallsign);
-
-        if (unit) {
-            unit.status = targetStatus;
-        } else if (isSelf && localOfficer) {
-            cachedUnits.push({
-                id: localOfficer.serverId || targetId,
-                callsign: localOfficer.callsign || targetCallsign,
-                name: localOfficer.name || 'Officer',
-                rank: localOfficer.rank || 'Officer',
-                status: targetStatus
-            });
-        }
-
-        if (isSelf) {
-            localOfficer.status = targetStatus;
-            updateScreenStatusOutline();
-            updateFooterBar();
-        }
-
-        renderActiveUnits(cachedUnits);
-        renderDashboardActiveUnits(cachedUnits);
-        return;
-    }
-
-    if (data.action === 'syncCallNotes' && data.callId) {
-        const found = cachedCalls.find(c => c.id === data.callId);
-        if (found) {
-            found.notes = data.notes;
-        }
-
-        if (currentActiveCall && currentActiveCall.id === data.callId) {
-            currentActiveCall.notes = data.notes;
-            renderCallDetails(currentActiveCall);
-        }
-        return;
-    }
-
-    if (data.action === 'syncAssignedUnits' && data.callId) {
-        if (!Array.isArray(cachedCalls)) cachedCalls = [];
-
-        const found = cachedCalls.find(c => c && c.id === data.callId);
-        if (found) {
-            found.assignedUnits = data.assignedUnits || [];
-            if (data.notes) found.notes = data.notes;
-            if (data.status) found.status = data.status;
-        }
-
-        if (currentActiveCall && currentActiveCall.id === data.callId) {
-            currentActiveCall.assignedUnits = data.assignedUnits || [];
-            if (data.notes) currentActiveCall.notes = data.notes;
-            if (data.status) currentActiveCall.status = data.status;
-            renderCallDetails(currentActiveCall);
-            updateFooterBar();
-        }
-        renderDashboardCalls();
-        checkAndAutoSwitchTab();
-        return;
-    }
-
-    if (data.action === 'syncCallCleared' && data.callId) {
-        const targetId = data.callId;
-        const found = cachedCalls.find(c => c.id === targetId);
-        if (found) {
-            found.status = 'Closed';
-            found.isCleared = true;
-            found.assignedUnits = [];
-            if (data.notes) found.notes = data.notes;
-        }
-
-        if (currentActiveCall && currentActiveCall.id === targetId) {
-            resetActiveCallView();
-        }
-
-        renderDashboardCalls();
-        checkAndAutoSwitchTab();
-        return;
-    }
-
-    if (!container) return;
-
     if (data.action === 'display') {
-        if (data.open) {
-            container.style.display = 'flex';
-            if (data.inVehicle) {
-                container.classList.add('dash-mounted');
-            } else {
-                container.classList.remove('dash-mounted');
-            }
-
-            const attached = getAttachedCall();
-
-            if (pendingAutoRunPlate) {
-                showTab('vehicles');
-                executePlateLookup(pendingAutoRunPlate);
-                pendingAutoRunPlate = null;
-            } else if (attached) {
-                currentActiveCall = attached;
-                showTab('calls');
-                renderCallDetails(attached);
-            } else {
-                showTab('dashboard');
-            }
-
-            updateFooterBar();
-            updateScreenStatusOutline();
-            renderDashboardCalls();
-            fetchActiveUnits();
-        } else {
-            container.style.display = 'none';
-            container.classList.remove('dash-mounted');
-            hideAllContextMenus();
-            toggleAttachModal(false);
-        }
-    }
-
-    if (data.action === 'loadDashboard' && data.data) {
-        const dash = data.data;
-
-        if (dash.officer) {
-            localOfficer = dash.officer;
-
-            const officerNameEl = document.getElementById('officer-name');
-            if (officerNameEl) {
-                officerNameEl.textContent = `${dash.officer.callsign || ''} ${dash.officer.name || ''}`.trim();
-            }
-            
-            updateScreenStatusOutline();
-            updateFooterBar();
-        }
-
-        if (Array.isArray(dash.calls)) {
-            cachedCalls = [...dash.calls];
-            renderDashboardCalls();
-
-            const attached = getAttachedCall();
-            if (attached) {
-                currentActiveCall = attached;
-                if (container && container.style.display === 'flex' && !pendingAutoRunPlate) {
-                    showTab('calls');
-                }
-                renderCallDetails(attached);
-                updateFooterBar();
-            }
-        }
-
-        fetchActiveUnits();
-    }
-
-    if (data.action === 'openTrafficStop' && data.plate) {
-        const container = document.getElementById('mdt-container');
-        if (container) {
-            container.style.display = 'flex';
-        }
-        
-        showTab('vehicles');
-        
-        const plateInput = document.getElementById('plate-search-input');
-        if (plateInput) {
-            plateInput.value = data.plate;
-        }
-        
-        executePlateLookup(data.plate);
-        return;
+        // Automatically toggle desktop tab visibility based on in-game CAD status
+        setCADMode(data.open);
     }
 });
 
@@ -1757,6 +1537,10 @@ window.addEventListener('keydown', (event) => {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
+    
+    // Default to closed mode until in-game CAD is opened
+    setCADMode(false);
+
     // 1. Load available units for login screen dropdown
     const selectEl = document.getElementById('login-operator-select');
     const hintEl = document.getElementById('login-password-hint');
@@ -2321,3 +2105,39 @@ async function submitOperatorLogin() {
     }
 }
 window.submitOperatorLogin = submitOperatorLogin;
+
+// Dynamic Mode Toggle: Full Suite when CAD is open, Restricted when closed
+function setCADMode(isOpen) {
+    const navButtons = document.querySelectorAll('.mdt-nav .nav-btn');
+    
+    navButtons.forEach(btn => {
+        // Always keep the close button visible
+        if (btn.id === 'close-btn') return;
+
+        const onclickAttr = btn.getAttribute('onclick') || '';
+        
+        // Define core operational tabs vs advanced utility tabs
+        const isCoreTab = onclickAttr.includes('dashboard') || onclickAttr.includes('calls') || onclickAttr.includes('createcall');
+
+        if (isOpen) {
+            // When CAD window is open: show all options across the board
+            btn.style.display = 'inline-block';
+        } else {
+            // When CAD window is closed: hide advanced tools, leaving only core tabs
+            if (isCoreTab) {
+                btn.style.display = 'inline-block';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+    });
+
+    // If the window closes while looking at a restricted tab, snap back to dashboard cleanly
+    if (!isOpen) {
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id !== 'dashboard' && activeTab.id !== 'calls' && activeTab.id !== 'createcall') {
+            showTab('dashboard');
+        }
+    }
+}
+window.setCADMode = setCADMode;
