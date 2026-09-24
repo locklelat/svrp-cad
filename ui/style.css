@@ -1250,3 +1250,9 @@ h3 {
 .chat-input-area button:hover {
     background: #0056b3;
 }
+
+.footer-version {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    padding-left: 5px;
+}

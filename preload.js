@@ -6,6 +6,11 @@ contextBridge.exposeInMainWorld('api', {
     VPS_API_URL
 });
 
+const { contextBridge, ipcRenderer } = require('electron');
+contextBridge.exposeInMainWorld('api', {
+  getAppVersion: () => ipcRenderer.invoke('get-app-version')
+});
+
 contextBridge.exposeInMainWorld('cadAPI', {
     fetchData: async (endpoint, data = {}) => {
         try {
