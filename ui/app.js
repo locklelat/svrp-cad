@@ -1,7 +1,9 @@
+const VPS_API_URL = CONFIG.API_URL;
+
 // Updated Frontend Bridge for your Standalone Desktop App
 async function fetchNui(endpoint, data = {}) {
     try {
-        const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : `http://${CONFIG.API_IP}:${CONFIG.API_PORT}`;
+        const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
 
         // Mock fallback for FiveM native functions not present on the VPS desktop app
         if (endpoint === 'getCurrentLocation') {
@@ -204,7 +206,7 @@ function showTab(tabId) {
 window.showTab = showTab;
 
 async function closeMDT() {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : `http://${CONFIG.API_IP}:${CONFIG.API_PORT}`;
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
     // Notify the VPS backend and wait for session clearance first
     if (localOfficer && localOfficer.callsign) {
         try {
@@ -240,7 +242,7 @@ async function closeMDT() {
 window.closeMDT = closeMDT;
 
 window.addEventListener('beforeunload', (e) => {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : `http://${CONFIG.API_IP}:${CONFIG.API_PORT}`;
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
     if (localOfficer && localOfficer.callsign) {
         // Synchronous fallback request to guarantee logout state on exit
         const xhr = new XMLHttpRequest();
@@ -1386,7 +1388,7 @@ function hideSelfStatusContextMenu() {
 }
 
 async function changeOfficerStatus(newStatus) {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : `http://${CONFIG.API_IP}:${CONFIG.API_PORT}`;
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
     hideSelfStatusContextMenu();
     localOfficer.status = newStatus;
     updateScreenStatusOutline();
@@ -1536,7 +1538,7 @@ window.addEventListener('keydown', (event) => {
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : `http://${CONFIG.API_IP}:${CONFIG.API_PORT}`;
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
     
     // Default to closed mode until in-game CAD is opened
     setCADMode(false);
@@ -2045,7 +2047,7 @@ function prefillReport(type, value) {
 window.prefillReport = prefillReport;
 
 async function submitOperatorLogin() {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : `http://${CONFIG.API_IP}:${CONFIG.API_PORT}`;
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
     const selectEl = document.getElementById('login-operator-select');
     const passwordInput = document.getElementById('login-password-input');
     if (passwordInput) {
