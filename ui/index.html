@@ -39,6 +39,12 @@
             <button class="nav-btn dispatcher-only" onclick="showTab('reports')">Reports</button>
             <button class="nav-btn dispatcher-only" onclick="showTab('units')">Active Units</button>
             <button class="nav-btn dispatcher-only" onclick="showTab('chat'); loadChatHistory();">Chat</button>
+            
+            <!-- Version Number Moved to Top Right -->
+            <div class="top-bar-version">
+                <span id="app-version">v...</span>
+            </div>
+
             <button id="close-btn" class="nav-btn close-btn">✕</button>
         </nav>
 
@@ -289,9 +295,6 @@
 
         <!-- Call Action Footer Bar -->
         <footer class="mdt-footer" id="mdt-footer">
-            <div class="footer-version">
-                <span id="app-version">v...</span>
-            </div>
             <div class="footer-call-status">
                 <span id="footer-call-label">NO ACTIVE CALL SELECTED</span>
             </div>

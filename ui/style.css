@@ -86,7 +86,7 @@ body {
 }
 
 /* ==========================================================================
-   2. Header Navigation (Now configured as a draggable window handle)
+   2. Header Navigation (Draggable window handle)
    ========================================================================== */
 .mdt-nav {
     display: flex;
@@ -96,7 +96,7 @@ body {
     padding: 12px 18px;
     gap: 12px;
     flex-shrink: 0;
-    -webkit-app-region: drag; /* Turns top nav bar into a draggable window handle */
+    -webkit-app-region: drag;
 }
 
 .nav-btn {
@@ -109,7 +109,7 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s ease;
-    -webkit-app-region: no-drag; /* Keeps navigation buttons clickable */
+    -webkit-app-region: no-drag;
 }
 
 .nav-btn:hover {
@@ -123,13 +123,24 @@ body {
     color: #ffffff;
 }
 
-.close-btn {
+/* Version badge positioned cleanly in the header top right */
+.top-bar-version {
     margin-left: auto;
+    font-size: 0.85rem;
+    opacity: 0.7;
+    color: #cbd5e1;
+    font-weight: 600;
+    user-select: none;
+    -webkit-app-region: no-drag;
+}
+
+.close-btn {
+    margin-left: 12px;
     background: #dc2626;
     border-color: #ef4444;
     color: #ffffff;
     padding: 8px 14px;
-    -webkit-app-region: no-drag; /* Keeps close button clickable */
+    -webkit-app-region: no-drag;
 }
 
 .close-btn:hover {
@@ -858,9 +869,9 @@ h3 {
 .footer-center-branding {
     flex: 1;
     text-align: center;
-    font-size: 1.15rem; /* Increased size to fill the vertical space */
-    font-weight: 800;   /* Extra bold for high visibility */
-    color: #94a3b8;     /* Slightly brighter contrast */
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #94a3b8;
     letter-spacing: 2px;
     text-transform: uppercase;
 }
@@ -1239,7 +1250,7 @@ h3 {
 
 .chat-input-area button {
     background: #007bff;
-    color: #white;
+    color: #fff;
     border: none;
     padding: 6px 14px;
     border-radius: 4px;
@@ -1249,10 +1260,4 @@ h3 {
 
 .chat-input-area button:hover {
     background: #0056b3;
-}
-
-.footer-version {
-    font-size: 0.85rem;
-    opacity: 0.7;
-    padding-left: 5px;
 }

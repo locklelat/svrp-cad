@@ -1,7 +1,7 @@
 // Updated Frontend Bridge for your Standalone Desktop App
 async function fetchNui(endpoint, data = {}) {
     try {
-        const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
+        const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : `http://${CONFIG.API_IP}:${CONFIG.API_PORT}`;
 
         // Mock fallback for FiveM native functions not present on the VPS desktop app
         if (endpoint === 'getCurrentLocation') {
@@ -204,7 +204,7 @@ function showTab(tabId) {
 window.showTab = showTab;
 
 async function closeMDT() {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : `http://${CONFIG.API_IP}:${CONFIG.API_PORT}`;
     // Notify the VPS backend and wait for session clearance first
     if (localOfficer && localOfficer.callsign) {
         try {
@@ -240,7 +240,7 @@ async function closeMDT() {
 window.closeMDT = closeMDT;
 
 window.addEventListener('beforeunload', (e) => {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : `http://${CONFIG.API_IP}:${CONFIG.API_PORT}`;
     if (localOfficer && localOfficer.callsign) {
         // Synchronous fallback request to guarantee logout state on exit
         const xhr = new XMLHttpRequest();
@@ -1386,7 +1386,7 @@ function hideSelfStatusContextMenu() {
 }
 
 async function changeOfficerStatus(newStatus) {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : `http://${CONFIG.API_IP}:${CONFIG.API_PORT}`;
     hideSelfStatusContextMenu();
     localOfficer.status = newStatus;
     updateScreenStatusOutline();
@@ -1536,20 +1536,24 @@ window.addEventListener('keydown', (event) => {
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : `http://${CONFIG.API_IP}:${CONFIG.API_PORT}`;
     
     // Default to closed mode until in-game CAD is opened
     setCADMode(false);
 
     // --- ADD APP VERSION FETCH HERE ---
     try {
+        const versionEl = document.getElementById('app-version');
+        if (versionEl) versionEl.innerText = 'v1.0.1';
+
         if (window.api && window.api.getAppVersion) {
             const version = await window.api.getAppVersion();
-            const versionEl = document.getElementById('app-version');
             if (versionEl) versionEl.innerText = `v${version}`;
         }
     } catch (error) {
         console.error('Could not load app version:', error);
+        const versionEl = document.getElementById('app-version');
+        if (versionEl) versionEl.innerText = 'v1.0.1';
     }
 
     // 1. Load available units for login screen dropdown
@@ -2041,7 +2045,7 @@ function prefillReport(type, value) {
 window.prefillReport = prefillReport;
 
 async function submitOperatorLogin() {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : "http://82.197.65.71:3001";
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : `http://${CONFIG.API_IP}:${CONFIG.API_PORT}`;
     const selectEl = document.getElementById('login-operator-select');
     const passwordInput = document.getElementById('login-password-input');
     if (passwordInput) {
