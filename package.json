@@ -1,6 +1,6 @@
 {
     "name": "svrp-cad",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "CAD Client for SVRP",
     "main": "main.js",
     "scripts": {
@@ -27,8 +27,8 @@
             "output": "dist"
         },
         "win": {
-          "target": "nsis",
-          "icon": "icon.ico"
+            "target": "nsis",
+            "icon": "icon.ico"
         },
         "publish": {
             "provider": "github",
