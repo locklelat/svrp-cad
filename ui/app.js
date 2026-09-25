@@ -639,7 +639,12 @@ async function setCallStatus(newStatus) {
     updateFooterBar();
     updateScreenStatusOutline();
 
-    fetchNui('updateOfficerStatus', { status: mappedStatus });
+    fetchNui('updateOfficerStatus', { 
+        callsign: localOfficer.callsign,
+        name: localOfficer.name,
+        rank: localOfficer.rank,
+        status: mappedStatus 
+    });
 
     await fetchNui('updateCallStatus', {
         callId: currentActiveCall.id,
@@ -664,7 +669,12 @@ async function clearCurrentCall() {
 
     localOfficer.status = 'Available';
     updateScreenStatusOutline();
-    fetchNui('updateOfficerStatus', { status: 'Available' });
+    fetchNui('updateOfficerStatus', { 
+        callsign: localOfficer.callsign,
+        name: localOfficer.name,
+        rank: localOfficer.rank,
+        status: 'Available' 
+    });
 
     resetActiveCallView();
     renderDashboardCalls();
@@ -1411,7 +1421,12 @@ async function changeOfficerStatus(newStatus) {
         }
     }
 
-    await fetchNui('updateOfficerStatus', { status: newStatus });
+    await fetchNui('updateOfficerStatus', { 
+        callsign: localOfficer.callsign,
+        name: localOfficer.name,
+        rank: localOfficer.rank,
+        status: newStatus 
+    });
     fetchActiveUnits();
 }
 window.changeOfficerStatus = changeOfficerStatus;
@@ -1545,7 +1560,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         const versionEl = document.getElementById('app-version');
-        if (versionEl) versionEl.innerText = 'v1.0.0'; // Updated to match package.json
+        if (versionEl) versionEl.innerText = 'v1.0.0';
 
         if (window.api && window.api.getAppVersion) {
             const version = await window.api.getAppVersion();
