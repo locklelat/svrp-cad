@@ -1,6 +1,6 @@
 {
     "name": "svrp-cad",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "description": "CAD Client for SVRP",
     "main": "main.js",
     "scripts": {
