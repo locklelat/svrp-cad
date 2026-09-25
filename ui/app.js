@@ -1543,10 +1543,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Default to closed mode until in-game CAD is opened
     setCADMode(false);
 
-    // --- ADD APP VERSION FETCH HERE ---
     try {
         const versionEl = document.getElementById('app-version');
-        if (versionEl) versionEl.innerText = 'v1.0.1';
+        if (versionEl) versionEl.innerText = 'v1.0.0'; // Updated to match package.json
 
         if (window.api && window.api.getAppVersion) {
             const version = await window.api.getAppVersion();
@@ -1555,7 +1554,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error('Could not load app version:', error);
         const versionEl = document.getElementById('app-version');
-        if (versionEl) versionEl.innerText = 'v1.0.1';
+        if (versionEl) versionEl.innerText = 'v1.0.0';
     }
 
     // 1. Load available units for login screen dropdown
