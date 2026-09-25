@@ -1,14 +1,10 @@
-const { contextBridge } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 const CONFIG = require('./config'); 
 const VPS_API_URL = CONFIG.API_URL;
 
 contextBridge.exposeInMainWorld('api', {
-    VPS_API_URL
-});
-
-const { contextBridge, ipcRenderer } = require('electron');
-contextBridge.exposeInMainWorld('api', {
-  getAppVersion: () => ipcRenderer.invoke('get-app-version')
+    VPS_API_URL,
+    getAppVersion: () => ipcRenderer.invoke('get-app-version')
 });
 
 contextBridge.exposeInMainWorld('cadAPI', {
