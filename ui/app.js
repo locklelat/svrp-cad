@@ -1529,11 +1529,9 @@ window.addEventListener('click', () => {
     hideAllContextMenus();
 });
 
-// LISTEN FOR IN-GAME CAD OPEN / CLOSE MESSAGES
 window.addEventListener('message', (event) => {
     const data = event.data;
-    if (data.action === 'display') {
-        // Automatically toggle desktop tab visibility based on in-game CAD status
+    if (data && data.action === 'display') {
         setCADMode(data.open);
     }
 });
@@ -2147,24 +2145,39 @@ async function submitOperatorLogin() {
 }
 window.submitOperatorLogin = submitOperatorLogin;
 
+async function pollInGameCADState() {
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
+    if (!localOfficer || !localOfficer.callsign || localOfficer.callsign === 'Unit') return;
+
+    try {
+        const response = await fetch(`${baseUrl}/api/cad/state?callsign=${encodeURIComponent(localOfficer.callsign)}`);
+        const data = await response.json();
+        
+        if (data && typeof data.isOpen !== 'undefined') {
+            setCADMode(data.isOpen);
+        }
+    } catch (err) {
+    }
+}
+
+setInterval(() => {
+    pollInGameCADState();
+}, 2000);
+
 // Dynamic Mode Toggle: Full Suite when CAD is open, Restricted when closed
 function setCADMode(isOpen) {
     const navButtons = document.querySelectorAll('.mdt-nav .nav-btn');
     
     navButtons.forEach(btn => {
-        // Always keep the close button visible
         if (btn.id === 'close-btn') return;
 
         const onclickAttr = btn.getAttribute('onclick') || '';
         
-        // Define core operational tabs vs advanced utility tabs
-        const isCoreTab = onclickAttr.includes('dashboard') || onclickAttr.includes('calls') || onclickAttr.includes('createcall');
+        const isCoreTab = onclickAttr.includes('dashboard') || onclickAttr.includes('calls');
 
         if (isOpen) {
-            // When CAD window is open: show all options across the board
             btn.style.display = 'inline-block';
         } else {
-            // When CAD window is closed: hide advanced tools, leaving only core tabs
             if (isCoreTab) {
                 btn.style.display = 'inline-block';
             } else {
@@ -2173,10 +2186,9 @@ function setCADMode(isOpen) {
         }
     });
 
-    // If the window closes while looking at a restricted tab, snap back to dashboard cleanly
     if (!isOpen) {
         const activeTab = document.querySelector('.tab-content.active');
-        if (activeTab && activeTab.id !== 'dashboard' && activeTab.id !== 'calls' && activeTab.id !== 'createcall') {
+        if (activeTab && activeTab.id !== 'dashboard' && activeTab.id !== 'calls') {
             showTab('dashboard');
         }
     }
