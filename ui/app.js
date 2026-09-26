@@ -1339,22 +1339,32 @@ function renderActiveUnits(units) {
         return;
     }
 
-    // Deduplicate units by callsign so each callsign only renders once
+    // Force strict map-based deduplication by normalized callsign so duplicates are impossible
     const uniqueUnitsMap = new Map();
+    
     list.forEach(unit => {
         if (!unit.callsign) return;
-        const key = String(unit.callsign).trim().toUpperCase();
-        // If it already exists, prioritize the one with a more active status or keep the latest
-        if (!uniqueUnitsMap.has(key) || unit.status !== 'Available') {
-            uniqueUnitsMap.set(key, unit);
+        const callsignKey = String(unit.callsign).trim().toUpperCase();
+        const selfCallsign = String(localOfficer.callsign || '').trim().toUpperCase();
+
+        if (callsignKey === selfCallsign) {
+            uniqueUnitsMap.set(callsignKey, {
+                ...unit,
+                name: localOfficer.name || unit.name,
+                rank: localOfficer.rank || unit.rank,
+                status: localOfficer.status || unit.status,
+                isSelf: true
+            });
+        } else if (!uniqueUnitsMap.has(callsignKey)) {
+            uniqueUnitsMap.set(callsignKey, { ...unit, isSelf: false });
         }
     });
-    const uniqueList = Array.from(uniqueUnitsMap.values());
 
-    uniqueList.forEach(unit => {
+    Array.from(uniqueUnitsMap.values()).forEach(unit => {
         const row = document.createElement('div');
         row.className = 'unit-row';
-        const isSelf = (String(unit.callsign).trim().toUpperCase() === String(localOfficer.callsign).trim().toUpperCase());
+        
+        const isSelf = unit.isSelf || (String(unit.callsign).trim().toUpperCase() === String(localOfficer.callsign || '').trim().toUpperCase());
 
         if (isSelf) {
             row.classList.add('is-self');
@@ -1364,13 +1374,9 @@ function renderActiveUnits(units) {
             row.classList.add('is-tracked');
         }
 
-        const unitStatusText = (activeTrackedServerId === unit.id) 
-            ? 'TRACKING GPS' 
-            : (unit.status || 'Available');
-
-        const statusClass = (activeTrackedServerId === unit.id) 
-            ? 'status-en-route' 
-            : getStatusClass(unit.status);
+        const displayStatus = isSelf ? (localOfficer.status || unit.status || 'Available') : (unit.status || 'Available');
+        const unitStatusText = (activeTrackedServerId === unit.id) ? 'TRACKING GPS' : displayStatus;
+        const statusClass = (activeTrackedServerId === unit.id) ? 'status-en-route' : getStatusClass(displayStatus);
 
         row.innerHTML = `
             <span class="unit-callsign">${unit.callsign || 'UNIT'}</span>
@@ -1414,35 +1420,19 @@ function hideSelfStatusContextMenu() {
 }
 
 async function changeOfficerStatus(newStatus) {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
     hideSelfStatusContextMenu();
     localOfficer.status = newStatus;
     updateScreenStatusOutline();
     updateFooterBar();
 
-    if (localOfficer && localOfficer.callsign) {
-        try {
-            await fetch(`${baseUrl}/api/officer/status`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    callsign: localOfficer.callsign,
-                    name: localOfficer.name,
-                    rank: localOfficer.rank,
-                    status: newStatus
-                })
-            });
-        } catch (err) {
-            console.error("Failed to sync status to VPS backend:", err);
-        }
-    }
-
+    // Fire a single clean update call via fetchNui, which talks to the unified server backend
     await fetchNui('updateOfficerStatus', { 
         callsign: localOfficer.callsign,
         name: localOfficer.name,
         rank: localOfficer.rank,
         status: newStatus 
     });
+    
     fetchActiveUnits();
 }
 window.changeOfficerStatus = changeOfficerStatus;
