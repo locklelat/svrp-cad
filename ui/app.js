@@ -1,14 +1,17 @@
 const VPS_API_URL = CONFIG.API_URL;
 
-// Updated Frontend Bridge for your Standalone Desktop App
 async function fetchNui(endpoint, data = {}) {
     try {
-        const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
+        const baseUrl = (window.CONFIG && window.CONFIG.API_URL) ? window.CONFIG.API_URL : '';
 
-        // Mock fallback for FiveM native functions not present on the VPS desktop app
+        if (!baseUrl) {
+            console.error("Critical Error: CONFIG.API_URL is missing or config.js failed to load.");
+            return null;
+        }
+
         if (endpoint === 'getCurrentLocation') {
             return {
-                street: 'Central Los Santos / Dispatch HQ',
+                street: 'Dispatch HQ',
                 coords: { x: 0.0, y: 0.0, z: 0.0 }
             };
         }
@@ -16,6 +19,7 @@ async function fetchNui(endpoint, data = {}) {
             window.close();
             return {};
         }
+
         let url = `${baseUrl}/api/${endpoint}`;
         let method = 'POST';
 
@@ -1771,6 +1775,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             checkAndAutoSwitchTab();
         });
     }
+
+    setInterval(() => {
+        fetchActiveUnits();
+    }, 3000);
 });
 
 // ==========================================
