@@ -2,8 +2,8 @@ const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
-const CONFIG = require('./config');
 
+// Logging for debugging updates
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
 
@@ -23,9 +23,7 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
-            preload: path.join(__dirname, 'preload.js'),
-            // Safely pass the hidden config argument to the preload environment
-            additionalArguments: [`--api-url=${CONFIG.API_URL}`]
+            preload: path.join(__dirname, 'preload.js')
         }
     });
 
