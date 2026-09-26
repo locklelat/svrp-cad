@@ -1,9 +1,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
-const CONFIG = require('./config'); 
-const VPS_API_URL = CONFIG.API_URL;
+const argPrefix = '--api-url=';
+const apiArg = process.argv.find(arg => arg.startsWith(argPrefix));
+const VPS_API_URL = apiArg ? apiArg.replace(argPrefix, '') : '';
 
 contextBridge.exposeInMainWorld('api', {
-    VPS_API_URL,
     getAppVersion: () => ipcRenderer.invoke('get-app-version')
 });
 
