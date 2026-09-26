@@ -1339,7 +1339,19 @@ function renderActiveUnits(units) {
         return;
     }
 
+    // Deduplicate units by callsign so each callsign only renders once
+    const uniqueUnitsMap = new Map();
     list.forEach(unit => {
+        if (!unit.callsign) return;
+        const key = String(unit.callsign).trim().toUpperCase();
+        // If it already exists, prioritize the one with a more active status or keep the latest
+        if (!uniqueUnitsMap.has(key) || unit.status !== 'Available') {
+            uniqueUnitsMap.set(key, unit);
+        }
+    });
+    const uniqueList = Array.from(uniqueUnitsMap.values());
+
+    uniqueList.forEach(unit => {
         const row = document.createElement('div');
         row.className = 'unit-row';
         const isSelf = (String(unit.callsign).trim().toUpperCase() === String(localOfficer.callsign).trim().toUpperCase());
