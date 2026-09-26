@@ -116,29 +116,29 @@ function escapeHtml(unsafe) {
 
 function getAttachedCall() {
     if (!localOfficer || !localOfficer.callsign) return null;
+    const selfCallsign = String(localOfficer.callsign).trim().toUpperCase();
+
     return cachedCalls.find(c => {
         const isClosed = c.isCleared || c.status === 'Closed';
-        return !isClosed && Array.isArray(c.assignedUnits) && c.assignedUnits.includes(localOfficer.callsign);
+        if (isClosed || !Array.isArray(c.assignedUnits)) return false;
+
+        return c.assignedUnits.some(u => String(u).trim().toUpperCase() === selfCallsign);
     }) || null;
 }
 
-// Auto-routing handler for regular units between Dashboard and Active Call
+// Auto-routing handler: Relax the forced redirect so you can browse other tabs freely
 function checkAndAutoSwitchTab() {
     const isDispatch = localOfficer && String(localOfficer.callsign).trim().toUpperCase() === 'DISPATCH';
-    if (isDispatch) return; // Dispatchers can freely navigate anywhere
+    if (isDispatch) return; 
 
     const attachedCall = getAttachedCall();
     const activeTabContent = document.querySelector('.tab-content.active');
     const activeTabId = activeTabContent ? activeTabContent.id : '';
 
-    if (attachedCall) {
-        if (activeTabId !== 'calls') {
-            showTab('calls');
-        }
-    } else {
-        if (activeTabId === 'calls' || activeTabId === '') {
-            showTab('dashboard');
-        }
+    // Only force-switch to 'calls' if you just got attached, 
+    // and stop forcing back to dashboard when browsing other tabs.
+    if (attachedCall && activeTabId === 'dashboard' && !window.userManuallyNavigating) {
+        // Optional auto-focus logic if desired, or let the user click freely
     }
 }
 
@@ -210,20 +210,6 @@ function showTab(tabId) {
 window.showTab = showTab;
 
 async function closeMDT() {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
-    // Notify the VPS backend and wait for session clearance first
-    if (localOfficer && localOfficer.callsign) {
-        try {
-            await fetch(`${baseUrl}/api/officer/logout`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ callsign: localOfficer.callsign })
-            });
-        } catch (err) {
-            console.error("Logout notification failed:", err);
-        }
-    }
-
     const attachedCall = getAttachedCall();
     if (attachedCall) {
         currentActiveCall = attachedCall;
@@ -246,14 +232,7 @@ async function closeMDT() {
 window.closeMDT = closeMDT;
 
 window.addEventListener('beforeunload', (e) => {
-    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
-    if (localOfficer && localOfficer.callsign) {
-        // Synchronous fallback request to guarantee logout state on exit
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `${baseUrl}/api/officer/logout`, false);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send(JSON.stringify({ callsign: localOfficer.callsign }));
-    }
+    // Left intentionally blank to prevent closing the desktop app from changing your status
 });
 
 function hideAllContextMenus() {
@@ -516,11 +495,12 @@ function renderCallDetails(callData) {
     const detailsContainer = document.getElementById('call-details');
     if (!detailsContainer) return;
 
-    const assigned = callData.assignedUnits || [];
+    const assigned = Array.isArray(callData.assignedUnits) ? callData.assignedUnits : [];
     const notes = callData.notes || [];
     const isClosed = callData.isCleared || callData.status === 'Closed';
 
-    const isOfficerAttached = assigned.includes(localOfficer.callsign);
+    const selfCallsign = String(localOfficer.callsign || '').trim().toUpperCase();
+    const isOfficerAttached = assigned.some(u => String(u).trim().toUpperCase() === selfCallsign);
 
     detailsContainer.innerHTML = `
         <div class="active-call-split-container">
@@ -607,6 +587,7 @@ function renderCallDetails(callData) {
         });
     }
 }
+window.renderCallDetails = renderCallDetails;
 
 async function submitCallNote() {
     if (!currentActiveCall) return;
@@ -1205,15 +1186,16 @@ let activeTrackedServerId = null;
 let contextTargetUnit = null;
 
 async function fetchActiveUnits() {
-    const container = document.getElementById('active-units-container');
-    if (container) {
-        container.innerHTML = '<div class="loading">Fetching on-duty units...</div>';
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
+    try {
+        const response = await fetch(`${baseUrl}/api/units`);
+        const units = await response.json();
+        
+        cachedUnits = Array.isArray(units) ? units : [];
+        renderActiveUnits(cachedUnits);
+        renderDashboardActiveUnits(cachedUnits);
+    } catch (err) {
     }
-
-    const units = await fetchNui('getActiveUnits', {});
-    cachedUnits = units || [];
-    renderActiveUnits(cachedUnits);
-    renderDashboardActiveUnits(cachedUnits);
 }
 window.fetchActiveUnits = fetchActiveUnits;
 
@@ -1778,7 +1760,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     setInterval(() => {
         fetchActiveUnits();
-    }, 3000);
+        pollDashboardCalls();
+    }, 2000);
 });
 
 // ==========================================
@@ -2189,8 +2172,37 @@ function setCADMode(isOpen) {
     if (!isOpen) {
         const activeTab = document.querySelector('.tab-content.active');
         if (activeTab && activeTab.id !== 'dashboard' && activeTab.id !== 'calls') {
-            showTab('dashboard');
+            const attachedCall = getAttachedCall();
+            if (attachedCall) {
+                showTab('calls');
+            } else {
+                showTab('dashboard');
+            }
         }
     }
 }
 window.setCADMode = setCADMode;
+
+async function pollDashboardCalls() {
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
+    try {
+        const response = await fetch(`${baseUrl}/api/dashboard`);
+        const dashboardData = await response.json();
+        
+        if (dashboardData && dashboardData.success) {
+            cachedCalls = dashboardData.calls || [];
+            renderDashboardCalls();
+            
+            const attachedCall = getAttachedCall();
+            const activeTabContent = document.querySelector('.tab-content.active');
+            
+            if (attachedCall && activeTabContent && activeTabContent.id === 'calls') {
+                currentActiveCall = attachedCall;
+                updateFooterBar();
+                renderCallDetails(attachedCall);
+            }
+        }
+    } catch (e) {
+    }
+}
+window.pollDashboardCalls = pollDashboardCalls;
