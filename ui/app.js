@@ -210,6 +210,18 @@ function showTab(tabId) {
 window.showTab = showTab;
 
 async function closeMDT() {
+    const isDispatch = localOfficer && String(localOfficer.callsign).trim().toUpperCase() === 'DISPATCH';
+
+    // If Dispatch is closing the app, mark their status as Closed on the backend
+    if (isDispatch && localOfficer && localOfficer.callsign) {
+        await fetchNui('updateOfficerStatus', {
+            callsign: localOfficer.callsign,
+            name: localOfficer.name,
+            rank: localOfficer.rank,
+            status: 'Closed'
+        });
+    }
+
     const attachedCall = getAttachedCall();
     if (attachedCall) {
         currentActiveCall = attachedCall;
@@ -232,7 +244,21 @@ async function closeMDT() {
 window.closeMDT = closeMDT;
 
 window.addEventListener('beforeunload', (e) => {
-    // Left intentionally blank to prevent closing the desktop app from changing your status
+    const isDispatch = localOfficer && String(localOfficer.callsign).trim().toUpperCase() === 'DISPATCH';
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : (window.CONFIG && window.CONFIG.API_URL) ? window.CONFIG.API_URL : '';
+    
+    // Synchronous fallback request to guarantee Dispatch status changes to Closed on hard exit/refresh
+    if (isDispatch && localOfficer && localOfficer.callsign && baseUrl) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${baseUrl}/api/officer/status`, false); // Synchronous call ensures completion before unload
+        xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+        xhr.send(JSON.stringify({
+            callsign: localOfficer.callsign,
+            name: localOfficer.name,
+            rank: localOfficer.rank,
+            status: 'Closed'
+        }));
+    }
 });
 
 function hideAllContextMenus() {
@@ -2102,6 +2128,16 @@ async function submitOperatorLogin() {
             status: 'Available'
         };
 
+        // If logged in as Dispatch, mark them Available on the server immediately
+        if (String(localOfficer.callsign).trim().toUpperCase() === 'DISPATCH') {
+            await fetchNui('updateOfficerStatus', { 
+                callsign: localOfficer.callsign,
+                name: localOfficer.name,
+                rank: localOfficer.rank,
+                status: 'Available' 
+            });
+        }
+
         const officerNameEl = document.getElementById('officer-name');
         if (officerNameEl) {
             officerNameEl.textContent = `${localOfficer.callsign} ${localOfficer.name}`;
@@ -2149,6 +2185,13 @@ setInterval(() => {
 
 // Dynamic Mode Toggle: Full Suite when CAD is open, Restricted when closed
 function setCADMode(isOpen) {
+    const isDispatch = localOfficer && String(localOfficer.callsign).trim().toUpperCase() === 'DISPATCH';
+    
+    // Dispatch's CAD state is always treated as open, protecting their tabs from server polling overrides
+    if (isDispatch) {
+        isOpen = true;
+    }
+
     inGameCadOpen = isOpen; 
     const navButtons = document.querySelectorAll('.mdt-nav .nav-btn');
     
@@ -2169,12 +2212,11 @@ function setCADMode(isOpen) {
         }
     });
 
-    if (!isOpen) {
+    if (!isOpen && !isDispatch) {
         const activeTab = document.querySelector('.tab-content.active');
         const activeTabId = activeTab ? activeTab.id : '';
         const attachedCall = getAttachedCall();
 
-        // If closing the CAD and we're on a restricted tab, OR if we're on the 'calls' tab but NOT attached to a call, snap to dashboard!
         if (activeTabId && activeTabId !== 'dashboard') {
             if (activeTabId !== 'calls' || !attachedCall) {
                 showTab('dashboard');
