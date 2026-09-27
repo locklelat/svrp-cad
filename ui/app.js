@@ -2149,7 +2149,7 @@ setInterval(() => {
 
 // Dynamic Mode Toggle: Full Suite when CAD is open, Restricted when closed
 function setCADMode(isOpen) {
-    inGameCadOpen = isOpen; // Track whether the in-game CAD is open
+    inGameCadOpen = isOpen; 
     const navButtons = document.querySelectorAll('.mdt-nav .nav-btn');
     
     navButtons.forEach(btn => {
@@ -2171,11 +2171,12 @@ function setCADMode(isOpen) {
 
     if (!isOpen) {
         const activeTab = document.querySelector('.tab-content.active');
-        if (activeTab && activeTab.id !== 'dashboard' && activeTab.id !== 'calls') {
-            const attachedCall = getAttachedCall();
-            if (attachedCall) {
-                showTab('calls');
-            } else {
+        const activeTabId = activeTab ? activeTab.id : '';
+        const attachedCall = getAttachedCall();
+
+        // If closing the CAD and we're on a restricted tab, OR if we're on the 'calls' tab but NOT attached to a call, snap to dashboard!
+        if (activeTabId && activeTabId !== 'dashboard') {
+            if (activeTabId !== 'calls' || !attachedCall) {
                 showTab('dashboard');
             }
         }
