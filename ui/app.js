@@ -1,4 +1,5 @@
 const VPS_API_URL = CONFIG.API_URL;
+let inGameCadOpen = false;
 
 async function fetchNui(endpoint, data = {}) {
     try {
@@ -145,11 +146,10 @@ function checkAndAutoSwitchTab() {
 function showTab(tabId) {
     const isDispatch = localOfficer && String(localOfficer.callsign).trim().toUpperCase() === 'DISPATCH';
 
-    // List of restricted tabs for regular patrol units
     const restrictedTabs = ['profiles', 'vehicles', 'tickets', 'reports', 'units', 'chat', 'createcall'];
 
-    if (!isDispatch && restrictedTabs.includes(tabId)) {
-        console.warn("Access denied: Regular units can only access Dashboard and Active Call.");
+    if (!isDispatch && restrictedTabs.includes(tabId) && !inGameCadOpen) {
+        console.warn("Access denied: Regular units can only access Dashboard and Active Call when in-game CAD is closed.");
         tabId = 'dashboard'; // Force redirect back to dashboard
     }
 
@@ -2149,13 +2149,13 @@ setInterval(() => {
 
 // Dynamic Mode Toggle: Full Suite when CAD is open, Restricted when closed
 function setCADMode(isOpen) {
+    inGameCadOpen = isOpen; // Track whether the in-game CAD is open
     const navButtons = document.querySelectorAll('.mdt-nav .nav-btn');
     
     navButtons.forEach(btn => {
         if (btn.id === 'close-btn') return;
 
         const onclickAttr = btn.getAttribute('onclick') || '';
-        
         const isCoreTab = onclickAttr.includes('dashboard') || onclickAttr.includes('calls');
 
         if (isOpen) {
@@ -2194,15 +2194,33 @@ async function pollDashboardCalls() {
             renderDashboardCalls();
             
             const attachedCall = getAttachedCall();
-            const activeTabContent = document.querySelector('.tab-content.active');
+            const wasAttached = currentActiveCall ? currentActiveCall.id : null;
             
-            if (attachedCall && activeTabContent && activeTabContent.id === 'calls') {
-                currentActiveCall = attachedCall;
-                updateFooterBar();
+            currentActiveCall = attachedCall;
+            updateFooterBar(); // Updates the bottom-left indicator instantly
+
+            const activeTabContent = document.querySelector('.tab-content.active');
+            const activeTabId = activeTabContent ? activeTabContent.id : '';
+            
+            // Case 1: Newly attached to a call -> Snap to 'calls' tab
+            if (attachedCall && wasAttached !== attachedCall.id && activeTabId !== 'calls') {
+                showTab('calls');
+            } 
+            // Case 2: Currently on the 'calls' tab -> Re-render details
+            else if (attachedCall && activeTabId === 'calls') {
                 renderCallDetails(attachedCall);
+            }
+            // Case 3: We WERE attached, but now we're NOT (call closed/cleared or detached)
+            else if (!attachedCall && wasAttached) {
+                resetActiveCallView();
+                // If we are sitting on the active call tab when it closes, send us back to the dashboard
+                if (activeTabId === 'calls') {
+                    showTab('dashboard');
+                }
             }
         }
     } catch (e) {
+        console.error("Failed to poll dashboard calls:", e);
     }
 }
 window.pollDashboardCalls = pollDashboardCalls;
