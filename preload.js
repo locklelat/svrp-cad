@@ -3,7 +3,10 @@ const { contextBridge, ipcRenderer } = require('electron');
 const VPS_API_URL = (window.CONFIG && window.CONFIG.API_URL) ? window.CONFIG.API_URL : 'http://82.197.65.71:3001';
 
 contextBridge.exposeInMainWorld('api', {
-    getAppVersion: () => ipcRenderer.invoke('get-app-version')
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    minimizeWindow: () => ipcRenderer.send('window-minimize'),
+    closeWindow: () => ipcRenderer.send('window-close'),
+    VPS_API_URL: VPS_API_URL
 });
 
 contextBridge.exposeInMainWorld('cadAPI', {

@@ -2090,14 +2090,6 @@ async function submitOperatorLogin() {
     const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
     const selectEl = document.getElementById('login-operator-select');
     const passwordInput = document.getElementById('login-password-input');
-    if (passwordInput) {
-        passwordInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                submitOperatorLogin();
-            }
-        });
-    }
     const hintEl = document.getElementById('login-password-hint');
 
     if (!selectEl || !selectEl.value) return;
@@ -2137,7 +2129,6 @@ async function submitOperatorLogin() {
             status: 'Available'
         };
 
-        // If logged in as Dispatch, mark them Available on the server immediately
         if (String(localOfficer.callsign).trim().toUpperCase() === 'DISPATCH') {
             await fetchNui('updateOfficerStatus', { 
                 callsign: localOfficer.callsign,
@@ -2157,6 +2148,7 @@ async function submitOperatorLogin() {
             loginModal.style.display = 'none';
         }
 
+        // Toggle dispatcher-only tab visibility explicitly
         const isDispatch = String(localOfficer.callsign).trim().toUpperCase() === 'DISPATCH';
         document.querySelectorAll('.dispatcher-only').forEach(btn => {
             btn.style.display = isDispatch ? 'inline-block' : 'none';
