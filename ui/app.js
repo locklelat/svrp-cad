@@ -530,6 +530,11 @@ function renderCallDetails(callData) {
     const detailsContainer = document.getElementById('call-details');
     if (!detailsContainer) return;
 
+    // Check if the user is currently typing a note to prevent background polls from wiping input
+    const activeElement = document.activeElement;
+    const isTypingNote = activeElement && activeElement.id === 'call-note-input';
+    const currentTypedText = isTypingNote ? activeElement.value : '';
+
     const assigned = Array.isArray(callData.assignedUnits) ? callData.assignedUnits : [];
     const notes = callData.notes || [];
     const isClosed = callData.isCleared || callData.status === 'Closed';
@@ -574,6 +579,15 @@ function renderCallDetails(callData) {
             </div>
         </div>
     `;
+
+    // Restore text if the user was typing when the background poll fired
+    if (isTypingNote) {
+        const restoredInput = document.getElementById('call-note-input');
+        if (restoredInput) {
+            restoredInput.value = currentTypedText;
+            restoredInput.focus();
+        }
+    }
 
     const chipsContainer = document.getElementById('assigned-units-list');
     if (chipsContainer) {
