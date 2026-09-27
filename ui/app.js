@@ -2186,41 +2186,92 @@ window.setCADMode = setCADMode;
 async function pollDashboardCalls() {
     const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
     try {
-        const response = await fetch(`${baseUrl}/api/dashboard`);
-        const dashboardData = await response.json();
+        // 1. Poll both dashboard data and active units simultaneously to catch live status changes
+        const [dashRes, unitsRes] = await Promise.all([
+            fetch(`${baseUrl}/api/dashboard`),
+            fetch(`${baseUrl}/api/units`)
+        ]);
+        
+        const dashboardData = await dashRes.json();
+        const unitsData = await unitsRes.json();
         
         if (dashboardData && dashboardData.success) {
             cachedCalls = dashboardData.calls || [];
             renderDashboardCalls();
-            
-            const attachedCall = getAttachedCall();
-            const wasAttached = currentActiveCall ? currentActiveCall.id : null;
-            
-            currentActiveCall = attachedCall;
-            updateFooterBar(); // Updates the bottom-left indicator instantly
+        }
 
-            const activeTabContent = document.querySelector('.tab-content.active');
-            const activeTabId = activeTabContent ? activeTabContent.id : '';
+        // 2. Match your callsign against the active units list to grab your real-time status
+        if (Array.isArray(unitsData) && localOfficer && localOfficer.callsign) {
+            const selfCallsign = String(localOfficer.callsign).trim().toUpperCase();
+            const myUnitRecord = unitsData.find(u => String(u.callsign).trim().toUpperCase() === selfCallsign);
             
-            // Case 1: Newly attached to a call -> Snap to 'calls' tab
-            if (attachedCall && wasAttached !== attachedCall.id && activeTabId !== 'calls') {
-                showTab('calls');
-            } 
-            // Case 2: Currently on the 'calls' tab -> Re-render details
-            else if (attachedCall && activeTabId === 'calls') {
-                renderCallDetails(attachedCall);
+            if (myUnitRecord && myUnitRecord.status) {
+                localOfficer.status = myUnitRecord.status;
+                updateScreenStatusOutline();
             }
-            // Case 3: We WERE attached, but now we're NOT (call closed/cleared or detached)
-            else if (!attachedCall && wasAttached) {
-                resetActiveCallView();
-                // If we are sitting on the active call tab when it closes, send us back to the dashboard
-                if (activeTabId === 'calls') {
-                    showTab('dashboard');
-                }
+        }
+
+        // 3. Attachment and footer sync logic
+        const attachedCall = getAttachedCall();
+        const wasAttached = currentActiveCall ? currentActiveCall.id : null;
+        
+        currentActiveCall = attachedCall;
+        updateFooterBar(); // Instantly toggles the En Route / On Scene button states!
+
+        const activeTabContent = document.querySelector('.tab-content.active');
+        const activeTabId = activeTabContent ? activeTabContent.id : '';
+        
+        if (attachedCall && wasAttached !== attachedCall.id && activeTabId !== 'calls') {
+            showTab('calls');
+        } else if (attachedCall && activeTabId === 'calls') {
+            renderCallDetails(attachedCall);
+        } else if (!attachedCall && wasAttached) {
+            resetActiveCallView();
+            if (activeTabId === 'calls') {
+                showTab('dashboard');
             }
         }
     } catch (e) {
-        console.error("Failed to poll dashboard calls:", e);
+        console.error("Failed to poll dashboard data:", e);
     }
 }
 window.pollDashboardCalls = pollDashboardCalls;
+
+function updateTaskbarStatusUI(currentStatus) {
+    if (!currentStatus) return;
+    const normalizedStatus = String(currentStatus).trim().toUpperCase();
+    
+    // Target footer action buttons and status elements
+    const btnEnroute = document.getElementById('btn-enroute');
+    const btnScene = document.getElementById('btn-scene');
+
+    if (btnEnroute) {
+        if (normalizedStatus.includes('EN ROUTE')) {
+            btnEnroute.classList.add('active');
+            btnEnroute.style.opacity = '1';
+        } else {
+            btnEnroute.classList.remove('active');
+        }
+    }
+
+    if (btnScene) {
+        if (normalizedStatus.includes('SCENE')) {
+            btnScene.classList.add('active');
+            btnScene.style.opacity = '1';
+        } else {
+            btnScene.classList.remove('active');
+        }
+    }
+
+    // Also update any general status badges or unit rows matching this status
+    const statusBadges = document.querySelectorAll('.unit-status, .unit-status-badge');
+    statusBadges.forEach(badge => {
+        const badgeText = (badge.textContent || '').trim().toUpperCase();
+        if (badgeText.includes(normalizedStatus) || normalizedStatus.includes(badgeText)) {
+            badge.style.outline = '2px solid #38bdf8';
+        } else {
+            badge.style.outline = 'none';
+        }
+    });
+}
+window.updateTaskbarStatusUI = updateTaskbarStatusUI;
