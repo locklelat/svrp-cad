@@ -211,15 +211,24 @@ window.showTab = showTab;
 
 async function closeMDT() {
     const isDispatch = localOfficer && String(localOfficer.callsign).trim().toUpperCase() === 'DISPATCH';
+    const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : (window.CONFIG && window.CONFIG.API_URL) ? window.CONFIG.API_URL : '';
 
-    // If Dispatch is closing the app, mark their status as Closed on the backend
-    if (isDispatch && localOfficer && localOfficer.callsign) {
-        await fetchNui('updateOfficerStatus', {
-            callsign: localOfficer.callsign,
-            name: localOfficer.name,
-            rank: localOfficer.rank,
-            status: 'Closed'
-        });
+    // If Dispatch is closing the app, mark their status as Closed on the VPS backend
+    if (isDispatch && localOfficer && localOfficer.callsign && baseUrl) {
+        try {
+            await fetch(`${baseUrl}/api/officer/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+                body: JSON.stringify({
+                    callsign: localOfficer.callsign,
+                    name: localOfficer.name,
+                    rank: localOfficer.rank,
+                    status: 'Closed'
+                })
+            });
+        } catch (err) {
+            console.error("Failed to update Dispatch status to Closed on exit:", err);
+        }
     }
 
     const attachedCall = getAttachedCall();
@@ -2215,12 +2224,21 @@ function setCADMode(isOpen) {
     if (!isOpen && !isDispatch) {
         const activeTab = document.querySelector('.tab-content.active');
         const activeTabId = activeTab ? activeTab.id : '';
-        const attachedCall = getAttachedCall();
+        
+        // Check if we are attached to a call first
+        const attachedCall = getAttachedCall() || currentActiveCall;
 
-        if (activeTabId && activeTabId !== 'dashboard') {
-            if (activeTabId !== 'calls' || !attachedCall) {
-                showTab('dashboard');
-            }
+        // If we ARE attached to a call, skip all restrictions and jump straight to 'calls' instantly!
+        if (attachedCall) {
+            currentActiveCall = attachedCall;
+            showTab('calls');
+            return;
+        }
+
+        // Otherwise, if not attached, enforce restricted tab lockouts back to dashboard
+        const restrictedTabs = ['profiles', 'vehicles', 'tickets', 'reports', 'units', 'chat', 'createcall'];
+        if (restrictedTabs.includes(activeTabId) || activeTabId !== 'dashboard') {
+            showTab('dashboard');
         }
     }
 }
@@ -2229,7 +2247,6 @@ window.setCADMode = setCADMode;
 async function pollDashboardCalls() {
     const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
     try {
-        // 1. Poll both dashboard data and active units simultaneously to catch live status changes
         const [dashRes, unitsRes] = await Promise.all([
             fetch(`${baseUrl}/api/dashboard`),
             fetch(`${baseUrl}/api/units`)
@@ -2243,7 +2260,6 @@ async function pollDashboardCalls() {
             renderDashboardCalls();
         }
 
-        // 2. Match your callsign against the active units list to grab your real-time status
         if (Array.isArray(unitsData) && localOfficer && localOfficer.callsign) {
             const selfCallsign = String(localOfficer.callsign).trim().toUpperCase();
             const myUnitRecord = unitsData.find(u => String(u.callsign).trim().toUpperCase() === selfCallsign);
@@ -2254,17 +2270,18 @@ async function pollDashboardCalls() {
             }
         }
 
-        // 3. Attachment and footer sync logic
         const attachedCall = getAttachedCall();
         const wasAttached = currentActiveCall ? currentActiveCall.id : null;
         
         currentActiveCall = attachedCall;
-        updateFooterBar(); // Instantly toggles the En Route / On Scene button states!
+        updateFooterBar(); 
 
         const activeTabContent = document.querySelector('.tab-content.active');
         const activeTabId = activeTabContent ? activeTabContent.id : '';
         
-        if (attachedCall && wasAttached !== attachedCall.id && activeTabId !== 'calls') {
+        // Only auto-switch tabs during polling if a brand new call attachment happens dynamically,
+        // rather than forcing a check every 2 seconds when you're already on the correct tab.
+        if (attachedCall && wasAttached !== attachedCall.id && activeTabId !== 'calls' && inGameCadOpen) {
             showTab('calls');
         } else if (attachedCall && activeTabId === 'calls') {
             renderCallDetails(attachedCall);
