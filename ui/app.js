@@ -1257,7 +1257,10 @@ async function fetchActiveUnits() {
         cachedUnits = Array.isArray(units) ? units : [];
         renderActiveUnits(cachedUnits);
         renderDashboardActiveUnits(cachedUnits);
+        
+        updateChatRecipientOptions();
     } catch (err) {
+        console.error("Failed to fetch active units:", err);
     }
 }
 window.fetchActiveUnits = fetchActiveUnits;
@@ -1486,24 +1489,61 @@ window.changeOfficerStatus = changeOfficerStatus;
 // DEPARTMENT CHAT TAB LOGIC
 // ==========================================
 
+let currentChatTarget = 'ALL'; // Tracks which chat feed you are currently viewing
+
+// Switch between chat threads (Broadcast vs Individual Unit)
+function switchChatFeed(recipientCallsign) {
+    currentChatTarget = recipientCallsign;
+    
+    // Update UI active tab styling if you have chat sidebar buttons
+    document.querySelectorAll('.chat-thread-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-target') === recipientCallsign);
+    });
+
+    loadChatHistory(); // Reload and filter the feed for this specific target
+}
+window.switchChatFeed = switchChatFeed;
+
 async function loadChatHistory() {
     const chatBox = document.getElementById('chat-messages-box');
-    if (chatBox && chatBox.innerHTML.includes('Loading secure channel')) {
+    if (!chatBox) return;
+
+    if (chatBox.innerHTML.includes('Loading secure channel')) {
         chatBox.innerHTML = '<div style="color: #64748b; font-size: 12px; text-align: center; padding: 15px;">Loading history...</div>';
     }
 
     const history = await fetchNui('getChatHistory', {});
-    if (!chatBox) return;
     chatBox.innerHTML = '';
 
     if (history && Array.isArray(history) && history.length > 0) {
-        history.forEach(msg => appendMessageToChat(msg));
+        const filteredHistory = history.filter(msg => {
+            if (currentChatTarget === 'ALL') {
+                return !msg.recipient || msg.recipient === 'ALL';
+            } else {
+                const targetUpper = String(currentChatTarget).trim().toUpperCase();
+                const msgRecipientUpper = String(msg.recipient || '').trim().toUpperCase();
+                const msgSenderUpper = String(msg.senderCallsign || '').trim().toUpperCase();
+                const selfCallsign = String(localOfficer.callsign || '').trim().toUpperCase();
+            
+                const sentToTarget = msgRecipientUpper === targetUpper || 
+                                     (targetUpper === 'DISPATCH' && msgRecipientUpper.includes('DISPATCH'));
+            
+                const receivedFromTarget = msgSenderUpper === targetUpper && 
+                                           (msgRecipientUpper === selfCallsign || msgRecipientUpper === 'ALL' || (selfCallsign.includes('DISPATCH') && msgRecipientUpper.includes('DISPATCH')));
+            
+                return sentToTarget || receivedFromTarget;
+            }
+        });
+
+        if (filteredHistory.length > 0) {
+            filteredHistory.forEach(msg => appendMessageToChat(msg));
+        } else {
+            chatBox.innerHTML = `<div style="color: #64748b; font-size: 12px; text-align: center; padding: 15px;">No message history with ${currentChatTarget}.</div>`;
+        }
     } else {
         chatBox.innerHTML = '<div style="color: #64748b; font-size: 12px; text-align: center; padding: 15px;">No active chat history.</div>';
     }
     chatBox.scrollTop = chatBox.scrollHeight;
-
-    updateChatRecipientOptions();
 }
 window.loadChatHistory = loadChatHistory;
 
@@ -1512,22 +1552,31 @@ function updateChatRecipientOptions() {
     if (!select) return;
 
     const previousSelection = select.value || 'ALL';
+    const selfCallsign = String(localOfficer.callsign || '').trim().toUpperCase();
 
-    select.innerHTML = '<option value="ALL">All Units (Department Broadcast)</option>';
+    let html = '<option value="ALL">All Units (Department Broadcast)</option>';
 
     if (cachedUnits && Array.isArray(cachedUnits)) {
         cachedUnits.forEach(unit => {
-            if (unit.callsign && unit.callsign !== localOfficer.callsign) {
-                const opt = document.createElement('option');
-                opt.value = unit.callsign;
-                opt.textContent = `${unit.name || 'Officer'} (${unit.callsign})`;
-                select.appendChild(opt);
+            const callsign = String(unit.callsign || '').trim().toUpperCase();
+            const status = String(unit.status || '').trim().toLowerCase();
+            
+            const isSelf = (callsign === selfCallsign);
+            const isClosed = (status === 'closed');
+
+            if (!isSelf && !isClosed && callsign) {
+                const isDispatch = callsign.includes('DISPATCH');
+                const displayName = isDispatch ? 'Dispatcher' : (unit.name || 'Officer');
+                
+                html += `<option value="${unit.callsign}">${escapeHtml(displayName)} (${escapeHtml(unit.callsign)})</option>`;
             }
         });
     }
 
+    select.innerHTML = html;
     select.value = previousSelection;
 }
+window.updateChatRecipientOptions = updateChatRecipientOptions;
 
 function appendMessageToChat(data) {
     const chatBox = document.getElementById('chat-messages-box');
@@ -1601,7 +1650,139 @@ window.addEventListener('message', (event) => {
     const data = event.data;
     const container = document.getElementById('mdt-container');
 
-    // ... [keep your other action handlers like receiveCadMessage, syncCallStatus, etc.] ...
+    if (data.action === 'receiveCadMessage' && data.data) {
+    appendMessageToChat(data.data);
+    if (data.data.senderCallsign && localOfficer && data.data.senderCallsign !== localOfficer.callsign) {
+        playCadAudio('chat');
+    }
+    return;
+}
+
+    if (data.action === 'syncCallStatus' && data.callId) {
+        const found = cachedCalls.find(c => c.id === data.callId);
+        if (found) {
+            found.status = data.status;
+            if (data.notes) found.notes = data.notes;
+        }
+
+        if (currentActiveCall && currentActiveCall.id === data.callId) {
+            currentActiveCall.status = data.status;
+            if (data.notes) currentActiveCall.notes = data.notes;
+            updateFooterBar();
+            
+            const detailsContainer = document.getElementById('call-details');
+            if (detailsContainer) {
+                renderCallDetails(currentActiveCall);
+            }
+        }
+        renderDashboardCalls();
+        return;
+    }
+
+    if (data.action === 'syncOfficerStatus') {
+        const targetId = data.serverId;
+        const targetCallsign = data.callsign;
+        const targetStatus = data.status;
+
+        if (!Array.isArray(cachedUnits)) {
+            cachedUnits = [];
+        }
+
+        let unit = cachedUnits.find(u => 
+            (targetId && u.id === targetId) || 
+            (targetCallsign && u.callsign === targetCallsign)
+        );
+
+        const isSelf = data.isSelf === true || 
+                       (targetId && localOfficer && localOfficer.serverId === targetId) || 
+                       (targetCallsign && localOfficer && localOfficer.callsign === targetCallsign);
+
+        if (unit) {
+            unit.status = targetStatus;
+        } else if (isSelf && localOfficer) {
+            cachedUnits.push({
+                id: localOfficer.serverId || targetId,
+                callsign: localOfficer.callsign || targetCallsign,
+                name: localOfficer.name || 'Officer',
+                rank: localOfficer.rank || 'Officer',
+                status: targetStatus
+            });
+        }
+
+        if (isSelf) {
+            localOfficer.status = targetStatus;
+            updateScreenStatusOutline();
+            updateFooterBar();
+        }
+
+        renderActiveUnits(cachedUnits);
+        renderDashboardActiveUnits(cachedUnits);
+        return;
+    }
+
+    if (data.action === 'syncCallNotes' && data.callId) {
+    const found = cachedCalls.find(c => c.id === data.callId);
+    if (found) {
+        found.notes = data.notes;
+    }
+
+    if (currentActiveCall && currentActiveCall.id === data.callId) {
+        currentActiveCall.notes = data.notes;
+        renderCallDetails(currentActiveCall);
+
+        const attachedCall = getAttachedCall();
+        if (attachedCall && attachedCall.id === data.callId) {
+            playCadAudio('call');
+        }
+    }
+    return;
+}
+
+    if (data.action === 'syncAssignedUnits' && data.callId) {
+    if (!Array.isArray(cachedCalls)) cachedCalls = [];
+
+    const found = cachedCalls.find(c => c && c.id === data.callId);
+    if (found) {
+        found.assignedUnits = data.assignedUnits || [];
+        if (data.notes) found.notes = data.notes;
+        if (data.status) found.status = data.status;
+    }
+
+    if (currentActiveCall && currentActiveCall.id === data.callId) {
+        currentActiveCall.assignedUnits = data.assignedUnits || [];
+        if (data.notes) currentActiveCall.notes = data.notes;
+        if (data.status) currentActiveCall.status = data.status;
+        renderCallDetails(currentActiveCall);
+        updateFooterBar();
+    }
+
+    if (Array.isArray(data.assignedUnits) && localOfficer && data.assignedUnits.includes(localOfficer.callsign)) {
+        playCadAudio('call');
+    }
+
+    renderDashboardCalls();
+    return;
+}
+
+    if (data.action === 'syncCallCleared' && data.callId) {
+        const targetId = data.callId;
+        const found = cachedCalls.find(c => c.id === targetId);
+        if (found) {
+            found.status = 'Closed';
+            found.isCleared = true;
+            found.assignedUnits = [];
+            if (data.notes) found.notes = data.notes;
+        }
+
+        if (currentActiveCall && currentActiveCall.id === targetId) {
+            resetActiveCallView();
+        }
+
+        renderDashboardCalls();
+        return;
+    }
+
+    if (!container) return;
 
     if (data.action === 'display') {
         if (data.open) {
@@ -1630,15 +1811,62 @@ window.addEventListener('message', (event) => {
             updateScreenStatusOutline();
             renderDashboardCalls();
             fetchActiveUnits();
-            
-            // AUTOMATICALLY LOAD CHAT HISTORY WHENEVER IN-GAME CAD OPENS
-            loadChatHistory(); 
         } else {
             container.style.display = 'none';
             container.classList.remove('dash-mounted');
             hideAllContextMenus();
             toggleAttachModal(false);
         }
+    }
+
+    if (data.action === 'loadDashboard' && data.data) {
+        const dash = data.data;
+
+        if (dash.officer) {
+            localOfficer = dash.officer;
+
+            const officerNameEl = document.getElementById('officer-name');
+            if (officerNameEl) {
+                officerNameEl.textContent = `${dash.officer.callsign || ''} ${dash.officer.name || ''}`.trim();
+            }
+            
+            updateScreenStatusOutline();
+            updateFooterBar();
+        }
+
+        if (Array.isArray(dash.calls)) {
+            cachedCalls = [...dash.calls];
+            renderDashboardCalls();
+
+            const attached = getAttachedCall();
+            if (attached) {
+                currentActiveCall = attached;
+                if (container && container.style.display === 'flex' && !pendingAutoRunPlate) {
+                    showTab('calls');
+                }
+                renderCallDetails(attached);
+                updateFooterBar();
+            }
+        }
+
+        fetchActiveUnits();
+    }
+
+    if (data.action === 'openTrafficStop' && data.plate) {
+        const container = document.getElementById('mdt-container');
+        if (container) {
+            container.style.display = 'flex';
+        }
+        
+        showTab('vehicles');
+        
+        const plateInput = document.getElementById('plate-search-input');
+        if (plateInput) {
+            plateInput.value = data.plate;
+        }
+        
+        executePlateLookup(data.plate);
+        return;
     }
 });
 
@@ -1664,8 +1892,6 @@ window.addEventListener('keydown', (event) => {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
-    
-    // Default to closed mode until in-game CAD is opened
     setCADMode(false);
 
     try {
@@ -1882,10 +2108,52 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    setInterval(() => {
-        fetchActiveUnits();
-        pollDashboardCalls();
-    }, 2000);
+    const recipientSelect = document.getElementById('chat-recipient-select');
+    if (recipientSelect) {
+        recipientSelect.addEventListener('change', (e) => {
+            switchChatFeed(e.target.value);
+        });
+    }
+
+    let lastKnownMessageCount = 0;
+
+setInterval(() => {
+    fetchActiveUnits();
+    pollDashboardCalls();
+
+    (async () => {
+        const baseUrl = (window.api && window.api.VPS_API_URL) ? window.api.VPS_API_URL : VPS_API_URL;
+        if (!localOfficer || !localOfficer.callsign) return;
+
+        try {
+            const response = await fetch(`${baseUrl}/api/chat`);
+            const history = await response.json();
+
+            if (Array.isArray(history)) {
+                if (history.length > lastKnownMessageCount && lastKnownMessageCount > 0) {
+                    const latestMsg = history[history.length - 1];
+                    const sender = String(latestMsg.senderCallsign || '').trim().toUpperCase();
+                    const self = String(localOfficer.callsign || '').trim().toUpperCase();
+
+                    if (sender !== self) {
+                        playCadAudio('chat');
+                    }
+                }
+                lastKnownMessageCount = history.length;
+
+                const chatTab = document.getElementById('chat');
+                if (chatTab && chatTab.classList.contains('active')) {
+                    const recipientSelect = document.getElementById('chat-recipient-select');
+                    const currentRecipient = recipientSelect ? recipientSelect.value : 'ALL';
+                    loadChatHistory().then(() => {
+                        if (recipientSelect) recipientSelect.value = currentRecipient;
+                    });
+                }
+            }
+        } catch (e) {
+        }
+    })();
+}, 2000);
 });
 
 // ==========================================
@@ -2360,8 +2628,6 @@ async function pollDashboardCalls() {
         const activeTabContent = document.querySelector('.tab-content.active');
         const activeTabId = activeTabContent ? activeTabContent.id : '';
         
-        // Only auto-switch tabs during polling if a brand new call attachment happens dynamically,
-        // rather than forcing a check every 2 seconds when you're already on the correct tab.
         if (attachedCall && wasAttached !== attachedCall.id && activeTabId !== 'calls' && inGameCadOpen) {
             showTab('calls');
         } else if (attachedCall && activeTabId === 'calls') {
@@ -2377,6 +2643,25 @@ async function pollDashboardCalls() {
     }
 }
 window.pollDashboardCalls = pollDashboardCalls;
+
+document.addEventListener('click', () => {
+    const chatAudio = document.getElementById('notif-sound-chat');
+    const callAudio = document.getElementById('notif-sound-call');
+    if (chatAudio && chatAudio.paused) chatAudio.load();
+    if (callAudio && callAudio.paused) callAudio.load();
+}, { once: true });
+
+function playCadAudio(type = 'chat') {
+    const soundId = type === 'call' ? 'notif-sound-call' : 'notif-sound-chat';
+    const audioEl = document.getElementById(soundId);
+    
+    if (audioEl) {
+        audioEl.currentTime = 0;
+        audioEl.play().catch(err => {
+        });
+    }
+}
+window.playCadAudio = playCadAudio;
 
 function updateTaskbarStatusUI(currentStatus) {
     if (!currentStatus) return;
@@ -2416,3 +2701,19 @@ function updateTaskbarStatusUI(currentStatus) {
     });
 }
 window.updateTaskbarStatusUI = updateTaskbarStatusUI;
+
+async function handleDesktopLogout() {
+    if (!localOfficer) return;
+
+    await fetch(`${CONFIG.API_URL}/api/officer/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            callsign: localOfficer.callsign,
+            name: localOfficer.name
+        })
+    });
+
+    localOfficer = null;
+    showLoginScreen();
+}
