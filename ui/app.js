@@ -2620,26 +2620,30 @@ async function pollDashboardCalls() {
         }
 
         const attachedCall = getAttachedCall();
-        const wasAttached = currentActiveCall ? currentActiveCall.id : null;
+        const wasAttachedId = currentActiveCall ? currentActiveCall.id : null;
+        const currentAttachedId = attachedCall ? attachedCall.id : null;
         
+        if (currentAttachedId && wasAttachedId !== currentAttachedId) {
+            playCadAudio('call'); // Plays svcallalert.mp3
+        }
+
         currentActiveCall = attachedCall;
         updateFooterBar(); 
 
         const activeTabContent = document.querySelector('.tab-content.active');
         const activeTabId = activeTabContent ? activeTabContent.id : '';
         
-        if (attachedCall && wasAttached !== attachedCall.id && activeTabId !== 'calls' && inGameCadOpen) {
+        if (attachedCall && wasAttachedId !== attachedCall.id && activeTabId !== 'calls' && inGameCadOpen) {
             showTab('calls');
         } else if (attachedCall && activeTabId === 'calls') {
             renderCallDetails(attachedCall);
-        } else if (!attachedCall && wasAttached) {
+        } else if (!attachedCall && wasAttachedId) {
             resetActiveCallView();
             if (activeTabId === 'calls') {
                 showTab('dashboard');
             }
         }
     } catch (e) {
-        console.error("Failed to poll dashboard data:", e);
     }
 }
 window.pollDashboardCalls = pollDashboardCalls;
