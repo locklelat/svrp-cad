@@ -1489,18 +1489,16 @@ window.changeOfficerStatus = changeOfficerStatus;
 // DEPARTMENT CHAT TAB LOGIC
 // ==========================================
 
-let currentChatTarget = 'ALL'; // Tracks which chat feed you are currently viewing
+let currentChatTarget = 'ALL';
 
-// Switch between chat threads (Broadcast vs Individual Unit)
 function switchChatFeed(recipientCallsign) {
     currentChatTarget = recipientCallsign;
     
-    // Update UI active tab styling if you have chat sidebar buttons
     document.querySelectorAll('.chat-thread-btn').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-target') === recipientCallsign);
     });
 
-    loadChatHistory(); // Reload and filter the feed for this specific target
+    loadChatHistory(); 
 }
 window.switchChatFeed = switchChatFeed;
 
@@ -1516,21 +1514,28 @@ async function loadChatHistory() {
     chatBox.innerHTML = '';
 
     if (history && Array.isArray(history) && history.length > 0) {
+        const selfCallsign = String(localOfficer.callsign || '').trim().toUpperCase();
+
         const filteredHistory = history.filter(msg => {
+            const recipientUpper = String(msg.recipient || 'ALL').trim().toUpperCase();
+            const senderUpper = String(msg.senderCallsign || '').trim().toUpperCase();
+
             if (currentChatTarget === 'ALL') {
-                return !msg.recipient || msg.recipient === 'ALL';
+                // In Department Broadcast, show only messages explicitly sent to ALL (or empty)
+                return recipientUpper === 'ALL' || recipientUpper === '';
             } else {
                 const targetUpper = String(currentChatTarget).trim().toUpperCase();
-                const msgRecipientUpper = String(msg.recipient || '').trim().toUpperCase();
-                const msgSenderUpper = String(msg.senderCallsign || '').trim().toUpperCase();
-                const selfCallsign = String(localOfficer.callsign || '').trim().toUpperCase();
-            
-                const sentToTarget = msgRecipientUpper === targetUpper || 
-                                     (targetUpper === 'DISPATCH' && msgRecipientUpper.includes('DISPATCH'));
-            
-                const receivedFromTarget = msgSenderUpper === targetUpper && 
-                                           (msgRecipientUpper === selfCallsign || msgRecipientUpper === 'ALL' || (selfCallsign.includes('DISPATCH') && msgRecipientUpper.includes('DISPATCH')));
-            
+
+                const isTargetDispatch = targetUpper.includes('DISPATCH');
+                const isMsgRecipientDispatch = recipientUpper.includes('DISPATCH');
+                const isMsgSenderDispatch = senderUpper.includes('DISPATCH');
+
+                const sentToTarget = (senderUpper === selfCallsign) && 
+                    (recipientUpper === targetUpper || (isTargetDispatch && isMsgRecipientDispatch));
+
+                const receivedFromTarget = (senderUpper === targetUpper || (isTargetDispatch && isMsgSenderDispatch)) && 
+                    (recipientUpper === selfCallsign || (isTargetDispatch && isMsgRecipientDispatch));
+
                 return sentToTarget || receivedFromTarget;
             }
         });
