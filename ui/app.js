@@ -631,12 +631,18 @@ function renderCallDetails(callData) {
 
     const noteInput = document.getElementById('call-note-input');
     if (noteInput && isOfficerAttached && !isClosed) {
-        noteInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') submitCallNote();
-        });
+        noteInput.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitCallNote();
+                noteInput.value = '';
+            }
+        };
     }
 }
 window.renderCallDetails = renderCallDetails;
+
+let isSubmittingNote = false;
 
 async function submitCallNote() {
     if (!currentActiveCall) return;
@@ -646,9 +652,15 @@ async function submitCallNote() {
     const text = noteInput.value.trim();
     if (!text) return;
 
+    // Set flag so renderCallDetails knows not to restore the typed text
+    isSubmittingNote = true;
+
+    // Include callsign and officer name in the payload
     const res = await fetchNui('addCallNote', {
         callId: currentActiveCall.id,
-        text: text
+        text: text,
+        callsign: localOfficer.callsign,
+        name: localOfficer.name
     });
 
     if (res && res.notes) {
@@ -656,7 +668,9 @@ async function submitCallNote() {
         renderCallDetails(currentActiveCall);
     }
 
+    // Clear the input value and reset the flag
     noteInput.value = '';
+    isSubmittingNote = false;
 }
 window.submitCallNote = submitCallNote;
 
