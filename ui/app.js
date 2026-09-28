@@ -1563,17 +1563,18 @@ async function sendChatMessage() {
 
     const recipient = recipientSelect ? recipientSelect.value : 'ALL';
 
-    // Pass the actual local officer identity instead of letting it default to DESKTOP
+    // Include callsign, name, and explicitly set origin to 'desktop'
     const response = await fetchNui('sendCadMessage', {
         recipient: recipient,
         message: message,
         callsign: localOfficer.callsign,
-        name: localOfficer.name
+        name: localOfficer.name,
+        origin: 'desktop' // <-- Add this property explicitly
     });
 
     if (response && response.success) {
         inputField.value = '';
-        loadChatHistory(); // Refresh immediately on desktop
+        loadChatHistory();
     }
 }
 window.sendChatMessage = sendChatMessage;
@@ -1598,8 +1599,46 @@ window.addEventListener('click', () => {
 
 window.addEventListener('message', (event) => {
     const data = event.data;
-    if (data && data.action === 'display') {
-        setCADMode(data.open);
+    const container = document.getElementById('mdt-container');
+
+    // ... [keep your other action handlers like receiveCadMessage, syncCallStatus, etc.] ...
+
+    if (data.action === 'display') {
+        if (data.open) {
+            container.style.display = 'flex';
+            if (data.inVehicle) {
+                container.classList.add('dash-mounted');
+            } else {
+                container.classList.remove('dash-mounted');
+            }
+
+            const attached = getAttachedCall();
+
+            if (pendingAutoRunPlate) {
+                showTab('vehicles');
+                executePlateLookup(pendingAutoRunPlate);
+                pendingAutoRunPlate = null;
+            } else if (attached) {
+                currentActiveCall = attached;
+                showTab('calls');
+                renderCallDetails(attached);
+            } else {
+                showTab('dashboard');
+            }
+
+            updateFooterBar();
+            updateScreenStatusOutline();
+            renderDashboardCalls();
+            fetchActiveUnits();
+            
+            // AUTOMATICALLY LOAD CHAT HISTORY WHENEVER IN-GAME CAD OPENS
+            loadChatHistory(); 
+        } else {
+            container.style.display = 'none';
+            container.classList.remove('dash-mounted');
+            hideAllContextMenus();
+            toggleAttachModal(false);
+        }
     }
 });
 
