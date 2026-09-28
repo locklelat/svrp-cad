@@ -1511,6 +1511,8 @@ function updateChatRecipientOptions() {
     const select = document.getElementById('chat-recipient-select');
     if (!select) return;
 
+    const previousSelection = select.value || 'ALL';
+
     select.innerHTML = '<option value="ALL">All Units (Department Broadcast)</option>';
 
     if (cachedUnits && Array.isArray(cachedUnits)) {
@@ -1523,6 +1525,8 @@ function updateChatRecipientOptions() {
             }
         });
     }
+
+    select.value = previousSelection;
 }
 
 function appendMessageToChat(data) {
@@ -1559,16 +1563,34 @@ async function sendChatMessage() {
 
     const recipient = recipientSelect ? recipientSelect.value : 'ALL';
 
+    // Pass the actual local officer identity instead of letting it default to DESKTOP
     const response = await fetchNui('sendCadMessage', {
         recipient: recipient,
-        message: message
+        message: message,
+        callsign: localOfficer.callsign,
+        name: localOfficer.name
     });
 
     if (response && response.success) {
         inputField.value = '';
+        loadChatHistory(); // Refresh immediately on desktop
     }
 }
 window.sendChatMessage = sendChatMessage;
+
+setInterval(() => {
+    const chatTab = document.getElementById('chat');
+    if (chatTab && chatTab.classList.contains('active')) {
+        const recipientSelect = document.getElementById('chat-recipient-select');
+        const currentRecipient = recipientSelect ? recipientSelect.value : 'ALL';
+        
+        loadChatHistory().then(() => {
+            if (recipientSelect) {
+                recipientSelect.value = currentRecipient;
+            }
+        });
+    }
+}, 2000);
 
 window.addEventListener('click', () => {
     hideAllContextMenus();
